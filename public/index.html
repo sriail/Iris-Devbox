@@ -405,10 +405,10 @@ function addFilesExport(files) {
 
 // --- Adaptive V86 Emulator Engine Initialization ---
 // --- Finalized Option A V86 Emulator Engine Initialization ---
+// --- Finalized Blob-Stream V86 Emulator Engine Initialization ---
 async function initV86Emulator(customDiskPath = null) {
   let StarterConstructor = window.V86;
 
-  // Structural check fallback priority mapping
   if (!StarterConstructor) {
     if (typeof window.V86Starter === "function") {
       StarterConstructor = window.V86Starter;
@@ -418,12 +418,10 @@ async function initV86Emulator(customDiskPath = null) {
   }
 
   if (!StarterConstructor) {
-    console.error("❌ Critical: V86 constructor binding missing from window scope.");
     addChatMessage("system", "❌ V86 Engine binding missing.", "System");
     return;
   }
 
-  // Teardown pre-existing instances gracefully to avoid canvas rendering conflicts
   if (emulator) {
     try { emulator.destroy(); } catch(e) {}
   }
@@ -437,24 +435,42 @@ async function initV86Emulator(customDiskPath = null) {
       bios: { url: "/v86/seabios.bin" },
       vga_bios: { url: "/v86/vgabios.bin" },
       autostart: true,
-      disable_audio: true, // Silences standard browser AudioContext autoplay warnings
+      disable_audio: true, 
       serial_containers: document.getElementById("serial") ? ["#serial"] : undefined
     };
 
-    // If a user uploaded a custom CDROM/Disk image, boot that directly
     if (customDiskPath) {
       config.cdrom = { url: customDiskPath };
     } else {
-      addChatMessage("system", "🚀 Streaming compressed filesystem into WASM memory space...", "System");
+      addChatMessage("system", "⏳ Downloading and unpacking compressed system disk...", "System");
       
+      // 1. Fetch the 50MB compressed asset from your worker proxy
+      const response = await fetch("/api/proxy-vm-image");
+      if (!response.ok) throw new Error("Failed to pull system image from backend proxy.");
+      
+      const compressedData = await response.arrayBuffer();
+
+      if (typeof fzstd === "undefined") {
+        throw new Error("Decompression engine (fzstd) missing from window environment scope.");
+      }
+
+      // 2. Unpack the compressed bytes into raw disk bytes
+      const decompressedBytes = fzstd.decompress(new Uint8Array(compressedData));
+
+      // 3. Turn the raw uncompressed bytes into a local streaming browser Blob
+      // This bypasses the continuous 32-bit array allocation crashes!
+      const diskBlob = new Blob([decompressedBytes], { type: "application/octet-stream" });
+      const localBlobUrl = URL.createObjectURL(diskBlob);
+
+      // 4. Bind the streaming Blob URL directly to your Hard Drive configuration slot
       config.hda = {
-        url: "/api/proxy-vm-image",
-        async: false, // Forces sequential download; completely bypasses server Range requirements
-        use_diskcache: true // Caches the completed asset in IndexedDB for near-instant sequential loads next time
+        url: localBlobUrl,
+        async: false // Bypasses network range verification since it's hosted locally inside the tab
       };
+
+      addChatMessage("system", "🚀 Booting virtual hardware environment...", "System");
     }
 
-    // Initialize layout instance using our resolved constructor reference
     emulator = new StarterConstructor(config);
     vmBooted = true;
     
