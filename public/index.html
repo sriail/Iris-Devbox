@@ -406,21 +406,45 @@ function addFilesExport(files) {
 function initV86Emulator(customDiskPath = null) {
   let StarterConstructor = null;
 
-  // Search across various module and standard global binding schemas
+  // 1. Direct Global Checks
   if (typeof V86Starter !== "undefined") {
     StarterConstructor = V86Starter;
   } else if (window.V86Starter) {
     StarterConstructor = window.V86Starter;
-  } else if (typeof window.v86 !== "undefined" && window.v86.V86Starter) {
-    StarterConstructor = window.v86.V86Starter;
+  } 
+  
+  // 2. Deep Scanning Namespace Check
+  if (!StarterConstructor) {
+    const v86Keys = Object.keys(window).filter(k => k.toLowerCase().includes('v86'));
+    
+    for (const key of v86Keys) {
+      const target = window[key];
+      if (!target) continue;
+      
+      // If the key itself is the constructor
+      if (typeof target === 'function') {
+        StarterConstructor = target;
+        break;
+      }
+      // If the constructor is nested inside the object (e.g., window.v86.V86Starter)
+      if (target.V86Starter) {
+        StarterConstructor = target.V86Starter;
+        break;
+      }
+      // Check for ES Module default exports (e.g., window.v86.default)
+      if (target.default && (target.default.name === 'V86Starter' || typeof target.default === 'function')) {
+        StarterConstructor = target.default;
+        break;
+      }
+    }
   }
 
-  // Fallback diagnostic capture block if script fails to mount globally
+  // Fallback diagnostic block if search fails
   if (!StarterConstructor) {
-    console.warn("Direct V86Starter global not found. Checking scope namespaces...");
-    console.log("Available window keywords:", Object.keys(window).filter(k => k.toLowerCase().includes('v86')));
+    console.warn("Direct V86Starter global not found. Found namespaces:", Object.keys(window).filter(k => k.toLowerCase().includes('v86')));
+    console.log("Inspected Namespace Payload:", window[Object.keys(window).filter(k => k.toLowerCase().includes('v86'))[0]]);
     
-    addChatMessage("system", "❌ V86 Engine structural binding missing. Check developer console properties.", "System");
+    addChatMessage("system", "❌ V86 Engine binding missing. Check console for Inspected Namespace Payload.", "System");
     return;
   }
 
