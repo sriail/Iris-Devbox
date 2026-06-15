@@ -402,15 +402,29 @@ function addFilesExport(files) {
   chatEl.scrollTop = chatEl.scrollHeight;
 }
 
-// --- V86 Emulator Engine Core Logic ---
+// --- Adaptive V86 Emulator Engine Initialization ---
 function initV86Emulator(customDiskPath = null) {
-  if (typeof V86Starter === "undefined") {
-    console.error("v86 engine library failed to compile or inject into DOM safely.");
-    addChatMessage("system", "❌ V86 Engine missing.", "System");
+  let StarterConstructor = null;
+
+  // Search across various module and standard global binding schemas
+  if (typeof V86Starter !== "undefined") {
+    StarterConstructor = V86Starter;
+  } else if (window.V86Starter) {
+    StarterConstructor = window.V86Starter;
+  } else if (typeof window.v86 !== "undefined" && window.v86.V86Starter) {
+    StarterConstructor = window.v86.V86Starter;
+  }
+
+  // Fallback diagnostic capture block if script fails to mount globally
+  if (!StarterConstructor) {
+    console.warn("Direct V86Starter global not found. Checking scope namespaces...");
+    console.log("Available window keywords:", Object.keys(window).filter(k => k.toLowerCase().includes('v86')));
+    
+    addChatMessage("system", "❌ V86 Engine structural binding missing. Check developer console properties.", "System");
     return;
   }
 
-  // Teardown pre-existing instances gracefully to avoid memory/canvas binding leaks
+  // Teardown pre-existing instances gracefully to avoid canvas rendering conflicts
   if (emulator) {
     try { emulator.destroy(); } catch(e) {}
   }
@@ -427,7 +441,6 @@ function initV86Emulator(customDiskPath = null) {
       serial_containers: document.getElementById("serial") ? ["#serial"] : undefined
     };
 
-    // Use uploaded file path or fallback to original GitHub distribution target
     if (customDiskPath) {
       config.cdrom = { url: customDiskPath };
     } else {
@@ -438,14 +451,14 @@ function initV86Emulator(customDiskPath = null) {
       };
     }
 
-    emulator = new V86Starter(config);
+    // Initialize layout instance using our resolved constructor reference
+    emulator = new StarterConstructor(config);
     vmBooted = true;
     
     if (sessionId && sessionEl) {
       sessionEl.textContent = sessionId.slice(0, 8);
     }
 
-    // Monitor characters arriving on the virtual UART port
     monitorSerialPort();
 
   } catch (error) {
@@ -460,12 +473,11 @@ function monitorSerialPort() {
   emulator.add_listener("serial0-output-char", (char) => {
     serialBuffer += char;
     
-    // Check if we reached a standard terminal prompt trigger
     if (serialBuffer.includes("#") || serialBuffer.includes("$")) {
       vmReady = true;
       if (vmBooted && serialBuffer.length > 2) {
         addChatMessage("system", "✓ VM ready - ttyS0 responding", "System");
-        vmBooted = false; // Only flag interface alert confirmation once
+        vmBooted = false; 
       }
     }
   });
@@ -539,7 +551,6 @@ function connect() {
         sessionId = msg.sessionId;
         if (sessionEl) sessionEl.textContent = sessionId.slice(0, 8);
         addChatMessage("system", "✓ VM session started", "System");
-        // Automatically start the default VM once the backend registers the session context
         initV86Emulator();
         break;
 
@@ -583,7 +594,7 @@ function connect() {
   });
 
   ws.addEventListener("close", () => {
-    console.warn("WebSocket disconnected. Attempting reconnect in 3s...");
+    console.warn("WebSocket disconnected. Reconnecting in 3s...");
     setTimeout(connect, 3000);
   });
 }
@@ -607,7 +618,6 @@ function handleSendPrompt() {
   }
 }
 
-// Bind UI Text Inputs
 if (sendBtn) {
   sendBtn.addEventListener("click", handleSendPrompt);
 }
@@ -617,7 +627,6 @@ if (promptEl) {
   });
 }
 
-// Bind File Upload System Context
 if (fileInput) {
   fileInput.addEventListener("change", async (e) => {
     const file = e.target.files[0];
@@ -640,9 +649,8 @@ if (fileInput) {
       }
 
       const result = await response.json();
-      addChatMessage("llm", "File uploaded successfully. Preparing to boot customized disk target...");
+      addChatMessage("llm", "File uploaded successfully. Initializing target disk environment...");
       
-      // Initialize VM safely with uploaded custom asset
       initV86Emulator(result.filePath || null);
 
     } catch (err) {
@@ -652,7 +660,7 @@ if (fileInput) {
   });
 }
 
-// --- Kickstart Pipeline Lifecycle ---
+// --- Kickstart Pipelines ---
 document.addEventListener("DOMContentLoaded", () => {
   connect();
 });
