@@ -94,6 +94,7 @@ async function handleMessage(data, sessionId, env) {
       
     case "llm_query":
       const prompt = data.payload.prompt;
+      const vmOutput = data.payload.vmOutput || "";
       const fileList = [...session.files.keys()];
       
       // Add user message to history
@@ -102,7 +103,7 @@ async function handleMessage(data, sessionId, env) {
         content: prompt
       });
       
-      const response = await queryGroq(prompt, fileList, session.chatHistory, env);
+      const response = await queryGroq(prompt, vmOutput, fileList, session.chatHistory, env);
       
       // Add assistant response to history
       session.chatHistory.push({
@@ -118,16 +119,6 @@ async function handleMessage(data, sessionId, env) {
         response: response,
         commands: commands
       }));
-      
-      // Execute commands if any
-      for (const cmd of commands) {
-        const cmdOutput = await executeVMCommand(cmd);
-        session.ws.send(JSON.stringify({
-          type: "command_executed",
-          command: cmd,
-          output: cmdOutput
-        }));
-      }
       break;
       
     case "file_list":
@@ -175,23 +166,7 @@ function parseVMCommands(response) {
 }
 __name(parseVMCommands, "parseVMCommands");
 
-async function executeVMCommand(cmd) {
-  // This is a simulation - in a real scenario, you'd communicate with the actual VM
-  // For now, we return simulated outputs
-  switch (cmd.tool) {
-    case "command":
-      return `$ ${cmd.command}\n[Command executed in VM]\n`;
-    case "list-files":
-      return `total 48\ndrwxr-xr-x  5 user user 4096 Jun 15 10:30 .\ndrwxr-xr-x 20 root root 4096 Jun 15 09:00 ..\n-rw-r--r--  1 user user  220 Jun 15 10:20 package.json\n-rw-r--r--  1 user user 2831 Jun 15 10:25 index.js\ndrwxr-xr-x  2 user user 4096 Jun 15 10:28 node_modules`;
-    case "help":
-      return `Available VM Tools:\n  command - Execute shell commands\n  list-files - List files in current directory\n  help - Show this help message`;
-    default:
-      return `Unknown command: ${cmd.tool}`;
-  }
-}
-__name(executeVMCommand, "executeVMCommand");
-
-async function queryGroq(prompt, fileList, chatHistory, env) {
+async function queryGroq(prompt, vmOutput, fileList, chatHistory, env) {
   try {
     const systemPrompt = `You are a helpful AI assistant running inside a Linux VM development environment. You have access to a terminal and can help the user with development tasks.
 
@@ -201,7 +176,10 @@ You can use the following tools by responding with JSON objects on separate line
 3. To show help: {"vm-tool": "help", "reasoning": "explanation"}
 
 Always explain your reasoning before providing commands. Be concise and helpful.
-${fileList.length > 0 ? `\nUser has uploaded files: ${fileList.join(", ")}` : ""}`;
+${fileList.length > 0 ? `\nUser has uploaded files: ${fileList.join(", ")}` : ""}
+
+Current VM state:
+${vmOutput ? `Last command output:\n${vmOutput}` : "VM just booted, waiting for first command."}`;
 
     const messages = [
       {
