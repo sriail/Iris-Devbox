@@ -404,9 +404,11 @@ function addFilesExport(files) {
 }
 
 // --- Adaptive V86 Emulator Engine Initialization ---
+// --- Finalized Option A V86 Emulator Engine Initialization ---
 async function initV86Emulator(customDiskPath = null) {
   let StarterConstructor = window.V86;
 
+  // Structural check fallback priority mapping
   if (!StarterConstructor) {
     if (typeof window.V86Starter === "function") {
       StarterConstructor = window.V86Starter;
@@ -416,10 +418,12 @@ async function initV86Emulator(customDiskPath = null) {
   }
 
   if (!StarterConstructor) {
+    console.error("❌ Critical: V86 constructor binding missing from window scope.");
     addChatMessage("system", "❌ V86 Engine binding missing.", "System");
     return;
   }
 
+  // Teardown pre-existing instances gracefully to avoid canvas rendering conflicts
   if (emulator) {
     try { emulator.destroy(); } catch(e) {}
   }
@@ -433,24 +437,24 @@ async function initV86Emulator(customDiskPath = null) {
       bios: { url: "/v86/seabios.bin" },
       vga_bios: { url: "/v86/vgabios.bin" },
       autostart: true,
-      disable_audio: true, 
+      disable_audio: true, // Silences standard browser AudioContext autoplay warnings
       serial_containers: document.getElementById("serial") ? ["#serial"] : undefined
     };
 
+    // If a user uploaded a custom CDROM/Disk image, boot that directly
     if (customDiskPath) {
       config.cdrom = { url: customDiskPath };
     } else {
-      addChatMessage("system", "🚀 Mounting compressed virtual storage stream...", "System");
+      addChatMessage("system", "🚀 Streaming compressed filesystem into WASM memory space...", "System");
       
       config.hda = {
         url: "/api/proxy-vm-image",
-        async: true,
-        // CRITICAL: Replace this number with the EXACT byte size of your UNCOMPRESSED .img file
-        size: 2486050828, 
-        use_diskcache: true
+        async: false, // Forces sequential download; completely bypasses server Range requirements
+        use_diskcache: true // Caches the completed asset in IndexedDB for near-instant sequential loads next time
       };
     }
 
+    // Initialize layout instance using our resolved constructor reference
     emulator = new StarterConstructor(config);
     vmBooted = true;
     
