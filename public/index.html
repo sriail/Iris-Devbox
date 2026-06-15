@@ -1,0 +1,289 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>iris-ai-vm</title>
+
+<style>
+body{
+margin:0;
+height:100vh;
+display:grid;
+grid-template-columns:1fr 300px;
+background:#231f20;
+color:#dce0df;
+font-family:monospace;
+}
+
+#screen{
+background:black;
+width:100%;
+height:100%;
+}
+
+#sidebar{
+display:flex;
+flex-direction:column;
+background:#2a2827;
+}
+
+textarea{
+flex:1;
+background:#1a1818;
+color:#dce0df;
+border:none;
+padding:10px;
+}
+
+button{
+margin:10px;
+}
+</style>
+</head>
+
+<body>
+
+<div id="screen"></div>
+
+<div id="sidebar">
+<div id="session">pending</div>
+
+<textarea id="prompt"></textarea>
+
+<button id="send">
+Send
+</button>
+
+<input
+type="file"
+id="file"
+hidden
+/>
+
+<button
+onclick="document.getElementById('file').click()">
+Upload
+</button>
+</div>
+
+<script src="/v86/libv86.js"></script>
+<script>
+let ws;
+let emulator;
+let sessionId = null;
+
+const sessionEl =
+    document.getElementById("session");
+
+const promptEl =
+    document.getElementById("prompt");
+
+const sendBtn =
+    document.getElementById("send");
+
+const fileInput =
+    document.getElementById("file");
+
+const screen =
+    document.getElementById("screen");
+
+function connect() {
+
+    const protocol =
+        location.protocol === "https:"
+            ? "wss:"
+            : "ws:";
+
+    ws = new WebSocket(
+        `${protocol}//${location.host}/ws`
+    );
+
+    ws.addEventListener(
+        "message",
+        event => {
+
+            const msg =
+                JSON.parse(
+                    event.data
+                );
+
+            switch (msg.type) {
+
+                case "session_created":
+
+                    sessionId =
+                        msg.sessionId;
+
+                    sessionEl.textContent =
+                        sessionId.slice(0, 8);
+
+                    break;
+
+                case "llm_response":
+
+                    console.log(
+                        msg.response
+                    );
+
+                    break;
+
+                case "file_added":
+
+                    console.log(
+                        "Uploaded:",
+                        msg.name
+                    );
+
+                    break;
+            }
+        }
+    );
+}
+
+function startVM() {
+
+    if (
+        typeof V86Starter ===
+        "undefined"
+    ) {
+
+        console.error(
+            "v86 not loaded"
+        );
+
+        return;
+    }
+
+    emulator =
+        new V86Starter({
+
+            wasm_path:
+                "/v86/v86.wasm",
+
+            memory_size:
+                512 * 1024 * 1024,
+
+            vga_memory_size:
+                16 * 1024 * 1024,
+
+            screen_container:
+                screen,
+
+            bios: {
+                url:
+                    "/v86/seabios.bin"
+            },
+
+            vga_bios: {
+                url:
+                    "/v86/vgabios.bin"
+            },
+
+            hda: {
+                url:
+                    "/vm/iris-ai-vm.img.zst"
+            },
+
+            autostart: true
+        });
+
+    emulator.add_listener(
+        "emulator-started",
+        () => {
+
+            if (
+                ws &&
+                ws.readyState ===
+                    WebSocket.OPEN
+            ) {
+
+                ws.send(
+                    JSON.stringify({
+                        type:
+                            "vm_booted"
+                    })
+                );
+            }
+        }
+    );
+}
+
+sendBtn.addEventListener(
+    "click",
+    () => {
+
+        const prompt =
+            promptEl.value.trim();
+
+        if (
+            !prompt ||
+            !ws ||
+            ws.readyState !==
+                WebSocket.OPEN
+        ) {
+            return;
+        }
+
+        ws.send(
+            JSON.stringify({
+                type:
+                    "llm_query",
+
+                payload: {
+                    prompt
+                }
+            })
+        );
+
+        promptEl.value = "";
+    }
+);
+
+fileInput.addEventListener(
+    "change",
+    async event => {
+
+        const file =
+            event.target.files[0];
+
+        if (
+            !file ||
+            !sessionId
+        ) {
+            return;
+        }
+
+        const form =
+            new FormData();
+
+        form.append(
+            "file",
+            file
+        );
+
+        await fetch(
+            `/upload?sid=${sessionId}`,
+            {
+                method: "POST",
+                body: form
+            }
+        );
+    }
+);
+
+window.addEventListener(
+    "load",
+    () => {
+
+        connect();
+
+        setTimeout(
+            startVM,
+            500
+        );
+    }
+);
+</script>
+
+</body>
+</html>
