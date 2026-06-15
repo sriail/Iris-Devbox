@@ -2,41 +2,262 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>iris-ai-vm</title>
-
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Iris DevBox AI</title>
 <style>
-body{
-margin:0;
-height:100vh;
-display:grid;
-grid-template-columns:1fr 300px;
-background:#231f20;
-color:#dce0df;
-font-family:monospace;
+* {
+  box-sizing: border-box;
 }
 
-#screen{
-background:black;
-width:100%;
-height:100%;
+body {
+  margin: 0;
+  height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr 420px;
+  background: #fff;
+  color: #1a1a1a;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
 }
 
-#sidebar{
-display:flex;
-flex-direction:column;
-background:#2a2827;
+#screen {
+  background: #000;
+  width: 100%;
+  height: 100%;
+  border-right: 1px solid #e5e5e5;
 }
 
-textarea{
-flex:1;
-background:#1a1818;
-color:#dce0df;
-border:none;
-padding:10px;
+#sidebar {
+  display: flex;
+  flex-direction: column;
+  background: #fafafa;
+  border-left: 1px solid #e5e5e5;
+  overflow: hidden;
 }
 
-button{
-margin:10px;
+.sidebar-header {
+  padding: 16px;
+  border-bottom: 1px solid #e5e5e5;
+  background: #fff;
+}
+
+.session-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  background: #f0f0f0;
+  border-radius: 4px;
+  font-family: 'Monaco', 'Courier New', monospace;
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+.session-badge strong {
+  color: #1a1a1a;
+}
+
+.sidebar-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #999;
+  margin-bottom: 8px;
+}
+
+#chat {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  background: #fafafa;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.chat-message {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.message-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: #999;
+}
+
+.message-content {
+  padding: 10px 12px;
+  border-radius: 4px;
+  background: #fff;
+  border: 1px solid #e5e5e5;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  font-family: 'Monaco', 'Courier New', monospace;
+  font-size: 13px;
+  color: #333;
+  line-height: 1.4;
+}
+
+.message-content.user {
+  background: #f0f7ff;
+  border-color: #d0e8ff;
+  color: #003d99;
+}
+
+.message-content.llm {
+  background: #fff;
+  border-color: #e5e5e5;
+  color: #1a1a1a;
+}
+
+.message-content.command {
+  background: #f5f5f5;
+  border-left: 3px solid #999;
+  color: #666;
+}
+
+.message-content.output {
+  background: #f9f9f9;
+  border-left: 3px solid #ccc;
+  color: #555;
+  font-size: 12px;
+}
+
+.files-section {
+  margin-top: 16px;
+  padding: 12px;
+  background: #fff;
+  border: 1px solid #e5e5e5;
+  border-radius: 4px;
+}
+
+.files-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: #999;
+  margin-bottom: 8px;
+}
+
+.file-item {
+  padding: 6px 8px;
+  background: #f9f9f9;
+  border-radius: 3px;
+  font-family: 'Monaco', 'Courier New', monospace;
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 4px;
+}
+
+.file-item:last-child {
+  margin-bottom: 0;
+}
+
+#controls {
+  padding: 16px;
+  border-top: 1px solid #e5e5e5;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+#prompt {
+  padding: 10px;
+  border: 1px solid #e5e5e5;
+  border-radius: 4px;
+  background: #fff;
+  color: #1a1a1a;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 13px;
+  resize: vertical;
+  max-height: 100px;
+  min-height: 60px;
+}
+
+#prompt:focus {
+  outline: none;
+  border-color: #0066cc;
+  box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1);
+}
+
+.button-group {
+  display: flex;
+  gap: 8px;
+}
+
+button {
+  flex: 1;
+  padding: 10px 14px;
+  background: #0066cc;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+button:hover {
+  background: #0052a3;
+}
+
+button:active {
+  background: #003d7a;
+}
+
+button.secondary {
+  background: #f0f0f0;
+  color: #1a1a1a;
+  border: 1px solid #e5e5e5;
+}
+
+button.secondary:hover {
+  background: #e8e8e8;
+}
+
+#file {
+  display: none;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #999;
+}
+
+@media (max-width: 1024px) {
+  body {
+    grid-template-columns: 1fr;
+  }
+  
+  #sidebar {
+    position: fixed;
+    right: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1000;
+  }
 }
 </style>
 </head>
@@ -46,24 +267,21 @@ margin:10px;
 <div id="screen"></div>
 
 <div id="sidebar">
-<div id="session">pending</div>
-
-<textarea id="prompt"></textarea>
-
-<button id="send">
-Send
-</button>
-
-<input
-type="file"
-id="file"
-hidden
-/>
-
-<button
-onclick="document.getElementById('file').click()">
-Upload
-</button>
+  <div class="sidebar-header">
+    <div class="session-badge">Session: <strong id="session">pending</strong></div>
+    <div class="sidebar-label">Chat</div>
+  </div>
+  
+  <div id="chat"></div>
+  
+  <div id="controls">
+    <textarea id="prompt" placeholder="Ask the LLM to do something..."></textarea>
+    <div class="button-group">
+      <button id="send">Send</button>
+      <button class="secondary" onclick="document.getElementById('file').click()">Upload</button>
+    </div>
+    <input type="file" id="file" />
+  </div>
 </div>
 
 <script src="/v86/libv86.js"></script>
@@ -72,217 +290,239 @@ let ws;
 let emulator;
 let sessionId = null;
 
-const sessionEl =
-    document.getElementById("session");
+const sessionEl = document.getElementById("session");
+const promptEl = document.getElementById("prompt");
+const sendBtn = document.getElementById("send");
+const fileInput = document.getElementById("file");
+const screen = document.getElementById("screen");
+const chatEl = document.getElementById("chat");
 
-const promptEl =
-    document.getElementById("prompt");
+function addChatMessage(role, content, label = null) {
+  const msgDiv = document.createElement("div");
+  msgDiv.className = "chat-message";
+  
+  if (label) {
+    const labelEl = document.createElement("div");
+    labelEl.className = "message-label";
+    labelEl.textContent = label;
+    msgDiv.appendChild(labelEl);
+  }
+  
+  const contentDiv = document.createElement("div");
+  contentDiv.className = `message-content ${role}`;
+  contentDiv.textContent = content;
+  msgDiv.appendChild(contentDiv);
+  
+  chatEl.appendChild(msgDiv);
+  chatEl.scrollTop = chatEl.scrollHeight;
+}
 
-const sendBtn =
-    document.getElementById("send");
+function addCommandOutput(cmd) {
+  const msgDiv = document.createElement("div");
+  msgDiv.className = "chat-message";
+  
+  const labelEl = document.createElement("div");
+  labelEl.className = "message-label";
+  labelEl.textContent = `Command: ${cmd.tool}`;
+  msgDiv.appendChild(labelEl);
+  
+  if (cmd.reasoning) {
+    const reasoningDiv = document.createElement("div");
+    reasoningDiv.className = "message-content command";
+    reasoningDiv.textContent = `💭 ${cmd.reasoning}`;
+    msgDiv.appendChild(reasoningDiv);
+  }
+  
+  if (cmd.command) {
+    const cmdDiv = document.createElement("div");
+    cmdDiv.className = "message-content command";
+    cmdDiv.textContent = `$ ${cmd.command}`;
+    msgDiv.appendChild(cmdDiv);
+  }
+  
+  chatEl.appendChild(msgDiv);
+  chatEl.scrollTop = chatEl.scrollHeight;
+}
 
-const fileInput =
-    document.getElementById("file");
+function addCommandResult(cmd, output) {
+  const msgDiv = document.createElement("div");
+  msgDiv.className = "chat-message";
+  
+  const outputDiv = document.createElement("div");
+  outputDiv.className = "message-content output";
+  outputDiv.textContent = output;
+  msgDiv.appendChild(outputDiv);
+  
+  chatEl.appendChild(msgDiv);
+  chatEl.scrollTop = chatEl.scrollHeight;
+}
 
-const screen =
-    document.getElementById("screen");
+function addFilesExport(files) {
+  const msgDiv = document.createElement("div");
+  msgDiv.className = "chat-message";
+  
+  const filesSection = document.createElement("div");
+  filesSection.className = "files-section";
+  
+  const titleEl = document.createElement("div");
+  titleEl.className = "files-title";
+  titleEl.textContent = "Exported Files";
+  filesSection.appendChild(titleEl);
+  
+  if (files && files.length > 0) {
+    files.forEach(file => {
+      const fileItem = document.createElement("div");
+      fileItem.className = "file-item";
+      fileItem.textContent = file;
+      filesSection.appendChild(fileItem);
+    });
+  } else {
+    const emptyItem = document.createElement("div");
+    emptyItem.className = "file-item";
+    emptyItem.textContent = "No files generated";
+    filesSection.appendChild(emptyItem);
+  }
+  
+  msgDiv.appendChild(filesSection);
+  chatEl.appendChild(msgDiv);
+  chatEl.scrollTop = chatEl.scrollHeight;
+}
 
 function connect() {
+  const protocol = location.protocol === "https:" ? "wss:" : "ws:";
+  ws = new WebSocket(`${protocol}//${location.host}/ws`);
 
-    const protocol =
-        location.protocol === "https:"
-            ? "wss:"
-            : "ws:";
+  ws.addEventListener("message", event => {
+    const msg = JSON.parse(event.data);
 
-    ws = new WebSocket(
-        `${protocol}//${location.host}/ws`
-    );
+    switch (msg.type) {
+      case "session_created":
+        sessionId = msg.sessionId;
+        sessionEl.textContent = sessionId.slice(0, 8);
+        addChatMessage("system", "✓ VM session started", "System");
+        break;
 
-    ws.addEventListener(
-        "message",
-        event => {
+      case "boot_confirm":
+        addChatMessage("system", "✓ VM is ready", "System");
+        break;
 
-            const msg =
-                JSON.parse(
-                    event.data
-                );
-
-            switch (msg.type) {
-
-                case "session_created":
-
-                    sessionId =
-                        msg.sessionId;
-
-                    sessionEl.textContent =
-                        sessionId.slice(0, 8);
-
-                    break;
-
-                case "llm_response":
-
-                    console.log(
-                        msg.response
-                    );
-
-                    break;
-
-                case "file_added":
-
-                    console.log(
-                        "Uploaded:",
-                        msg.name
-                    );
-
-                    break;
-            }
+      case "llm_response":
+        addChatMessage("llm", msg.response, "Assistant");
+        if (msg.commands && msg.commands.length > 0) {
+          msg.commands.forEach(cmd => {
+            addCommandOutput(cmd);
+          });
         }
-    );
+        break;
+
+      case "command_executed":
+        addCommandResult(msg.command, msg.output);
+        break;
+
+      case "file_added":
+        addChatMessage("system", `📎 ${msg.name} uploaded`, "System");
+        break;
+
+      case "files_exported":
+        addFilesExport(msg.files);
+        break;
+
+      case "file_list":
+        if (msg.files.length > 0) {
+          addChatMessage("system", "Files: " + msg.files.join(", "), "System");
+        }
+        break;
+    }
+  });
 }
 
 function startVM() {
+  if (typeof V86Starter === "undefined") {
+    console.error("v86 not loaded");
+    return;
+  }
 
-    if (
-        typeof V86Starter ===
-        "undefined"
-    ) {
+  emulator = new V86Starter({
+    wasm_path: "/v86/v86.wasm",
+    memory_size: 512 * 1024 * 1024,
+    vga_memory_size: 16 * 1024 * 1024,
+    screen_container: screen,
+    bios: {
+      url: "/v86/seabios.bin"
+    },
+    vga_bios: {
+      url: "/v86/vgabios.bin"
+    },
+    hda: {
+      url: "https://raw.githubusercontent.com/sriail/Iris-Devbox/main/public/vm/iris-ai-vm.img.zst"
+    },
+    autostart: true
+  });
 
-        console.error(
-            "v86 not loaded"
-        );
-
-        return;
+  emulator.add_listener("emulator-started", () => {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({
+        type: "vm_booted"
+      }));
     }
-
-    emulator =
-        new V86Starter({
-
-            wasm_path:
-                "/v86/v86.wasm",
-
-            memory_size:
-                512 * 1024 * 1024,
-
-            vga_memory_size:
-                16 * 1024 * 1024,
-
-            screen_container:
-                screen,
-
-            bios: {
-                url:
-                    "/v86/seabios.bin"
-            },
-
-            vga_bios: {
-                url:
-                    "/v86/vgabios.bin"
-            },
-
-            hda: {
-                url:
-                    "https://raw.githubusercontent.com/sriail/Iris-Devbox/main/public/vm/iris-ai-vm.img.zst"
-            },
-
-            autostart: true
-        });
-
-    emulator.add_listener(
-        "emulator-started",
-        () => {
-
-            if (
-                ws &&
-                ws.readyState ===
-                    WebSocket.OPEN
-            ) {
-
-                ws.send(
-                    JSON.stringify({
-                        type:
-                            "vm_booted"
-                    })
-                );
-            }
-        }
-    );
+  });
 }
 
-sendBtn.addEventListener(
-    "click",
-    () => {
+sendBtn.addEventListener("click", () => {
+  const prompt = promptEl.value.trim();
 
-        const prompt =
-            promptEl.value.trim();
+  if (!prompt || !ws || ws.readyState !== WebSocket.OPEN) {
+    return;
+  }
 
-        if (
-            !prompt ||
-            !ws ||
-            ws.readyState !==
-                WebSocket.OPEN
-        ) {
-            return;
-        }
+  addChatMessage("user", prompt, "You");
 
-        ws.send(
-            JSON.stringify({
-                type:
-                    "llm_query",
-
-                payload: {
-                    prompt
-                }
-            })
-        );
-
-        promptEl.value = "";
+  ws.send(JSON.stringify({
+    type: "llm_query",
+    payload: {
+      prompt
     }
-);
+  }));
 
-fileInput.addEventListener(
-    "change",
-    async event => {
+  promptEl.value = "";
+});
 
-        const file =
-            event.target.files[0];
+promptEl.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && e.ctrlKey) {
+    sendBtn.click();
+  }
+});
 
-        if (
-            !file ||
-            !sessionId
-        ) {
-            return;
-        }
+fileInput.addEventListener("change", async event => {
+  const file = event.target.files[0];
 
-        const form =
-            new FormData();
+  if (!file || !sessionId) {
+    return;
+  }
 
-        form.append(
-            "file",
-            file
-        );
+  const form = new FormData();
+  form.append("file", file);
 
-        await fetch(
-            `/upload?sid=${sessionId}`,
-            {
-                method: "POST",
-                body: form
-            }
-        );
+  try {
+    const response = await fetch(`/upload?sid=${sessionId}`, {
+      method: "POST",
+      body: form
+    });
+
+    if (!response.ok) {
+      addChatMessage("system", "Upload failed", "System");
     }
-);
+  } catch (e) {
+    addChatMessage("system", `Upload error: ${e.message}`, "System");
+  }
+  
+  fileInput.value = "";
+});
 
-window.addEventListener(
-    "load",
-    () => {
-
-        connect();
-
-        setTimeout(
-            startVM,
-            500
-        );
-    }
-);
+window.addEventListener("load", () => {
+  connect();
+  setTimeout(startVM, 500);
+});
 </script>
 
 </body>
