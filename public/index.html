@@ -404,22 +404,23 @@ function addFilesExport(files) {
 }
 
 // --- Adaptive V86 Emulator Engine Initialization ---
-// --- Adaptive V86 Emulator Engine Initialization (With ZSTD Decompression) ---
+// --- Finalized V86 Emulator Engine Initialization ---
 async function initV86Emulator(customDiskPath = null) {
-  let StarterConstructor = null;
+  // Direct target acquired from your console diagnostics
+  let StarterConstructor = window.V86;
 
-  // Search across various module and standard global binding schemas
-  if (typeof V86Starter !== "undefined") {
-    StarterConstructor = V86Starter;
-  } else if (window.V86Starter) {
-    StarterConstructor = window.V86Starter;
-  } else if (typeof window.v86 !== "undefined" && window.v86.V86Starter) {
-    StarterConstructor = window.v86.V86Starter;
+  // Fallback chain just in case of environment shifts
+  if (!StarterConstructor) {
+    if (typeof window.V86Starter === "function") {
+      StarterConstructor = window.V86Starter;
+    } else if (typeof V86Starter !== "undefined") {
+      StarterConstructor = V86Starter;
+    }
   }
 
   if (!StarterConstructor) {
-    console.warn("Direct V86Starter global not found. Checking scope namespaces...");
-    addChatMessage("system", "❌ V86 Engine structural binding missing.", "System");
+    console.error("❌ Critical: V86 constructor binding missing from window scope.");
+    addChatMessage("system", "❌ V86 Engine binding missing. Check developer console.", "System");
     return;
   }
 
@@ -437,7 +438,7 @@ async function initV86Emulator(customDiskPath = null) {
       bios: { url: "/v86/seabios.bin" },
       vga_bios: { url: "/v86/vgabios.bin" },
       autostart: true,
-      disable_audio: true, // Silences the browser AudioContext autoplay warnings
+      disable_audio: true, // Silences browser AudioContext autoplay warnings
       serial_containers: document.getElementById("serial") ? ["#serial"] : undefined
     };
 
@@ -445,7 +446,6 @@ async function initV86Emulator(customDiskPath = null) {
     if (customDiskPath) {
       config.cdrom = { url: customDiskPath };
     } else {
-      // Notify the user since downloading/decompressing the system image into RAM takes a few seconds
       addChatMessage("system", "⏳ Downloading and decompressing system image into memory...", "System");
 
       // 1. Fetch the compressed file through your local Cloudflare Worker proxy
@@ -456,15 +456,15 @@ async function initV86Emulator(customDiskPath = null) {
 
       const compressedBuffer = await response.arrayBuffer();
 
-      // 2. Safe check for the fzstd unpacking dependency
+      // 2. Safety check for the fzstd unpacking dependency
       if (typeof fzstd === "undefined") {
         throw new Error("The fzstd decompression library failed to load from CDN.");
       }
 
-      // 3. Decompress the .zst payload directly into a raw byte array (.img representation)
+      // 3. Decompress the .zst payload directly into a raw byte array
       const decompressedBuffer = fzstd.decompress(new Uint8Array(compressedBuffer));
       
-      // 4. Pass the raw uncompressed buffer block directly to the emulator engine
+      // 4. Feed the raw, uncompressed buffer straight to the emulator
       config.hda = {
         buffer: decompressedBuffer
       };
@@ -472,7 +472,7 @@ async function initV86Emulator(customDiskPath = null) {
       addChatMessage("system", "🚀 Decompression complete. Initializing virtual hardware layers...", "System");
     }
 
-    // Initialize layout instance using our resolved constructor and memory buffer configuration
+    // Initialize layout instance using our target constructor
     emulator = new StarterConstructor(config);
     vmBooted = true;
     
