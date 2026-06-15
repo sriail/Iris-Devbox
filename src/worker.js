@@ -15,27 +15,31 @@ var worker_default = {
     }
     
     // --- ADDED: GitHub Proxy Handler for v86 Image ---
-    if (url.pathname === "/api/proxy-vm-image") {
-      const targetUrl = "https://raw.githubusercontent.com/sriail/Iris-Devbox/main/public/vm/iris-ai-vm.img.zst";
-      
-      const response = await fetch(targetUrl, {
-        headers: {
-          "Range": request.headers.get("Range") || ""
-        }
-      });
+if (url.pathname === "/api/proxy-vm-image") {
+  // If using Gzip (.gz), change the extension here
+  const targetUrl = "https://raw.githubusercontent.com/sriail/Iris-Devbox/main/public/vm/iris-ai-vm.img.gz";
+  
+  const response = await fetch(targetUrl);
+  if (!response.ok) return new Response("Failed to fetch image from storage", { status: 500 });
 
-      const newHeaders = new Headers(response.headers);
-      newHeaders.set("Access-Control-Allow-Origin", "*");
-      newHeaders.set("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
-      newHeaders.set("Access-Control-Allow-Headers", "Range, Content-Type");
-      newHeaders.set("Access-Control-Expose-Headers", "Content-Range, Content-Length, Accept-Ranges");
+  // Pipe the incoming zipped storage stream through the worker's native hardware decompressor
+  const decompressionStream = new DecompressionStream("gzip");
+  const decompressedStream = response.body.pipeThrough(decompressionStream);
 
-      return new Response(response.body, {
-        status: response.status,
-        statusText: response.statusText,
-        headers: newHeaders
-      });
-    }
+  // Return the raw, uncompressed stream back to the browser with streaming headers
+  const newHeaders = new Headers();
+  newHeaders.set("Content-Type", "application/octet-stream");
+  newHeaders.set("Access-Control-Allow-Origin", "*");
+  newHeaders.set("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
+  newHeaders.set("Access-Control-Allow-Headers", "Range, Content-Type");
+  newHeaders.set("Access-Control-Expose-Headers", "Accept-Ranges, Content-Length");
+  newHeaders.set("Accept-Ranges", "bytes");
+
+  return new Response(decompressedStream, {
+    status: 200,
+    headers: newHeaders
+  });
+}
     // --- END OF PROXY HANDLER ---
     
     if (env.ASSETS && typeof env.ASSETS.fetch === "function") {
