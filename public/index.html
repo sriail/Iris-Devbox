@@ -292,8 +292,9 @@ button.secondary:hover {
 
 <script src="/v86/libv86.js"></script>
 <script>
-let ws;
-let emulator;
+// --- Global Application State ---
+let ws = null;
+let emulator = null;
 let sessionId = null;
 let vmBooted = false;
 let vmReady = false;
@@ -301,6 +302,7 @@ let serialBuffer = "";
 let commandQueue = [];
 let isProcessing = false;
 
+// --- DOM Element Selection ---
 const sessionEl = document.getElementById("session");
 const promptEl = document.getElementById("prompt");
 const sendBtn = document.getElementById("send");
@@ -308,6 +310,7 @@ const fileInput = document.getElementById("file");
 const screen = document.getElementById("screen");
 const chatEl = document.getElementById("chat");
 
+// --- UI Display Helpers ---
 function addChatMessage(role, content, label = null) {
   const msgDiv = document.createElement("div");
   msgDiv.className = "chat-message";
@@ -334,7 +337,7 @@ function addCommandOutput(cmd) {
   
   const labelEl = document.createElement("div");
   labelEl.className = "message-label";
-  labelEl.textContent = `Command: ${cmd.tool}`;
+  labelEl.textContent = `Command: ${cmd.tool || 'Shell'}`;
   msgDiv.appendChild(labelEl);
   
   if (cmd.reasoning) {
@@ -399,18 +402,70 @@ function addFilesExport(files) {
   chatEl.scrollTop = chatEl.scrollHeight;
 }
 
+// --- V86 Emulator Engine Core Logic ---
+function initV86Emulator(customDiskPath = null) {
+  if (typeof V86Starter === "undefined") {
+    console.error("v86 engine library failed to compile or inject into DOM safely.");
+    addChatMessage("system", "❌ V86 Engine missing.", "System");
+    return;
+  }
+
+  // Teardown pre-existing instances gracefully to avoid memory/canvas binding leaks
+  if (emulator) {
+    try { emulator.destroy(); } catch(e) {}
+  }
+
+  try {
+    const config = {
+      wasm_path: "/v86/v86.wasm",
+      memory_size: 512 * 1024 * 1024,
+      vga_memory_size: 16 * 1024 * 1024,
+      screen_container: screen,
+      bios: { url: "/v86/seabios.bin" },
+      vga_bios: { url: "/v86/vgabios.bin" },
+      autostart: true,
+      serial_containers: document.getElementById("serial") ? ["#serial"] : undefined
+    };
+
+    // Use uploaded file path or fallback to original GitHub distribution target
+    if (customDiskPath) {
+      config.cdrom = { url: customDiskPath };
+    } else {
+      config.hda = {
+        url: "https://raw.githubusercontent.com/sriail/Iris-Devbox/main/public/vm/iris-ai-vm.img.zst",
+        async: true,
+        use_diskcache: false
+      };
+    }
+
+    emulator = new V86Starter(config);
+    vmBooted = true;
+    
+    if (sessionId && sessionEl) {
+      sessionEl.textContent = sessionId.slice(0, 8);
+    }
+
+    // Monitor characters arriving on the virtual UART port
+    monitorSerialPort();
+
+  } catch (error) {
+    console.error("Critical failure during startVM layout runtime:", error);
+    addChatMessage("system", `💥 StartVM Failure: ${error.message}`, "System");
+  }
+}
+
 function monitorSerialPort() {
   if (!emulator) return;
   
   emulator.add_listener("serial0-output-char", (char) => {
     serialBuffer += char;
     
-    // Check if we got a prompt (# or $ usually indicates shell prompt)
+    // Check if we reached a standard terminal prompt trigger
     if (serialBuffer.includes("#") || serialBuffer.includes("$")) {
       vmReady = true;
       if (vmBooted && serialBuffer.length > 2) {
         addChatMessage("system", "✓ VM ready - ttyS0 responding", "System");
-        vmBooted = false; // Only show once
+        vmBooted = false; // Only flag interface alert confirmation once
       }
     }
   });
@@ -419,10 +474,8 @@ function monitorSerialPort() {
 async function executeCommand(cmd) {
   if (!emulator) return "";
   
-  // Send command to serial port
   emulator.serial0_send(cmd + "\n");
   
-  // Wait for response
   return new Promise((resolve) => {
     let output = "";
     let timeout = setTimeout(() => {
@@ -431,8 +484,6 @@ async function executeCommand(cmd) {
     
     const listener = (char) => {
       output += char;
-      
-      // Reset timeout on each character received
       clearTimeout(timeout);
       timeout = setTimeout(() => {
         emulator.remove_listener("serial0-output-char", listener);
@@ -448,17 +499,14 @@ async function processQueueItem(item) {
   isProcessing = true;
   
   try {
-    // EXECUTE
     addCommandOutput(item.cmd);
     
-    // WAIT - Send to VM and get response
     if (item.cmd.command) {
       const output = await executeCommand(item.cmd.command);
       addCommandResult(item.cmd, output);
       serialBuffer = output;
     }
     
-    // PLAN - Send output to LLM for next action
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify({
         type: "llm_query",
@@ -472,13 +520,13 @@ async function processQueueItem(item) {
     console.error("Queue processing error:", e);
   } finally {
     isProcessing = false;
-    // Process next item in queue
     if (commandQueue.length > 0) {
       setTimeout(() => processQueueItem(commandQueue.shift()), 500);
     }
   }
 }
 
+// --- Network Layer & WebSocket Event Loop ---
 function connect() {
   const protocol = location.protocol === "https:" ? "wss:" : "ws:";
   ws = new WebSocket(`${protocol}//${location.host}/ws`);
@@ -489,8 +537,10 @@ function connect() {
     switch (msg.type) {
       case "session_created":
         sessionId = msg.sessionId;
-        sessionEl.textContent = sessionId.slice(0, 8);
+        if (sessionEl) sessionEl.textContent = sessionId.slice(0, 8);
         addChatMessage("system", "✓ VM session started", "System");
+        // Automatically start the default VM once the backend registers the session context
+        initV86Emulator();
         break;
 
       case "boot_confirm":
@@ -502,7 +552,6 @@ function connect() {
         addChatMessage("llm", msg.response, "Assistant");
         if (msg.commands && msg.commands.length > 0) {
           msg.commands.forEach(cmd => {
-            // Queue commands for execution
             if (!isProcessing) {
               commandQueue.push({ cmd });
               processQueueItem(commandQueue.shift());
@@ -532,103 +581,81 @@ function connect() {
         break;
     }
   });
+
+  ws.addEventListener("close", () => {
+    console.warn("WebSocket disconnected. Attempting reconnect in 3s...");
+    setTimeout(connect, 3000);
+  });
 }
 
+// --- Client Input Handlers & Interactivity ---
+function handleSendPrompt() {
+  if (!promptEl) return;
+  const promptText = promptEl.value.trim();
+  if (!promptText) return;
 
+  addChatMessage("user", promptText, "You");
+  promptEl.value = "";
 
-function startVM() {
-  if (typeof V86Starter === "undefined") {
-    console.error("v86 not loaded");
-    return;
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({
+      type: "user_prompt",
+      payload: { prompt: promptText }
+    }));
+  } else {
+    addChatMessage("system", "❌ Unable to forward message. Server connection down.", "System");
   }
+}
 
-  try {
-    emulator = new V86Starter({
-      wasm_path: "/v86/v86.wasm",
-      memory_size: 512 * 1024 * 1024,
-      vga_memory_size: 16 * 1024 * 1024,
-      screen_container: screen,
-      bios: {
-        url: "/v86/seabios.bin"
-      },
-      vga_bios: {
-        url: "/v86/vgabios.bin"
-      },
-      hda: {
-        url: "https://raw.githubusercontent.com/sriail/Iris-Devbox/main/public/vm/iris-ai-vm.img.zst",
-        async: true,
-        use_diskcache: false
-      },
-      autostart: true,
-      serial_containers: ["#serial"]
-    });
+// Bind UI Text Inputs
+if (sendBtn) {
+  sendBtn.addEventListener("click", handleSendPrompt);
+}
+if (promptEl) {
+  promptEl.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") handleSendPrompt();
+  });
+}
 
-    // Setup serial port monitoring immediately
-    // 1. Ensure file inputs append a valid FormData boundary structure
-fileInput.addEventListener("change", async (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
+// Bind File Upload System Context
+if (fileInput) {
+  fileInput.addEventListener("change", async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
 
-  // Track state safely before dispatching request
-  addChatMessage("user", `Uploading file: ${file.name}...`);
+    addChatMessage("user", `Uploading file: ${file.name}...`);
 
-  const formData = new FormData();
-  formData.append("file", file); // Make sure "file" matches your backend's field name
+    const formData = new FormData();
+    formData.append("file", file);
 
-  try {
-    // Dynamically safely target the active session route
-    const response = await fetch(`/upload?sid=${sessionId}`, {
-      method: "POST",
-      body: formData // Never manually define Content-Type headers when sending FormData
-    });
+    try {
+      const response = await fetch(`/upload?sid=${sessionId}`, {
+        method: "POST",
+        body: formData 
+      });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Server returned ${response.status}: ${errorText}`);
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Server returned ${response.status}: ${errorText}`);
+      }
+
+      const result = await response.json();
+      addChatMessage("llm", "File uploaded successfully. Preparing to boot customized disk target...");
+      
+      // Initialize VM safely with uploaded custom asset
+      initV86Emulator(result.filePath || null);
+
+    } catch (err) {
+      console.error("Upload failure pipeline executed:", err);
+      addChatMessage("llm", `❌ Error uploading asset: ${err.message}`);
     }
+  });
+}
 
-    const result = await response.json();
-    addChatMessage("llm", "File uploaded successfully. Preparing to boot VM...");
-    
-    // ONLY initialize VM when upload resolves completely
-    initV86Emulator(result.filePath || null);
-
-  } catch (err) {
-    console.error("Upload failure pipeline executed:", err);
-    addChatMessage("llm", `❌ Error uploading asset: ${err.message}`);
-  }
+// --- Kickstart Pipeline Lifecycle ---
+document.addEventListener("DOMContentLoaded", () => {
+  connect();
 });
-
-// 2. Safe wrap your initialization function to handle missing assets gracefully
-function initV86Emulator(customDiskPath = null) {
-  try {
-    // Safeguard against missing libv86 components
-    if (typeof V86Starter !== "function") {
-      throw new Error("v86 engine library failed to compile or inject into DOM safely.");
-    }
-
-    emulator = new V86Starter({
-      screen_container: document.getElementById("screen"),
-      bios: { url: "/v86/bios/seabios.bin" },
-      vga_bios: { url: "/v86/bios/vgabios.bin" },
-      // Dynamically load default OS or your freshly uploaded disk target
-      cdrom: customDiskPath ? { url: customDiskPath } : { url: "/v86/images/linux.iso" },
-      autostart: true,
-    });
-
-    emulator.add_listener("serial0-output-char", function(char) {
-      serialBuffer += char;
-      // Your terminal parsing loop here
-    });
-
-    vmBooted = true;
-    sessionEl.textContent = sessionId;
-
-  } catch (error) {
-    console.error("Critical failure during startVM layout runtime:", error);
-    addChatMessage("llm", `💥 startVM Failure: ${error.message}`);
-  }
-}
 </script>
     
 </body>
