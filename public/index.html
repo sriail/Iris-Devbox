@@ -468,11 +468,11 @@ function initV86Emulator(customDiskPath = null) {
     if (customDiskPath) {
       config.cdrom = { url: customDiskPath };
     } else {
-      config.hda = {
-        url: "https://raw.githubusercontent.com/sriail/Iris-Devbox/main/public/vm/iris-ai-vm.img.zst",
-        async: true,
-        use_diskcache: false
-      };
+config.hda = {
+  url: "/api/proxy-vm-image", // Points to your newly created worker proxy
+  async: true,
+  use_diskcache: false
+};
     }
 
     // Initialize layout instance using our resolved constructor reference
