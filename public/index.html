@@ -291,6 +291,7 @@ button.secondary:hover {
 </div>
 
 <script src="/v86/libv86.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fzstd@0.1.1/umd/index.js"></script>
 <script>
 // --- Global Application State ---
 let ws = null;
@@ -403,48 +404,22 @@ function addFilesExport(files) {
 }
 
 // --- Adaptive V86 Emulator Engine Initialization ---
-function initV86Emulator(customDiskPath = null) {
+// --- Adaptive V86 Emulator Engine Initialization (With ZSTD Decompression) ---
+async function initV86Emulator(customDiskPath = null) {
   let StarterConstructor = null;
 
-  // 1. Direct Global Checks
+  // Search across various module and standard global binding schemas
   if (typeof V86Starter !== "undefined") {
     StarterConstructor = V86Starter;
   } else if (window.V86Starter) {
     StarterConstructor = window.V86Starter;
-  } 
-  
-  // 2. Deep Scanning Namespace Check
-  if (!StarterConstructor) {
-    const v86Keys = Object.keys(window).filter(k => k.toLowerCase().includes('v86'));
-    
-    for (const key of v86Keys) {
-      const target = window[key];
-      if (!target) continue;
-      
-      // If the key itself is the constructor
-      if (typeof target === 'function') {
-        StarterConstructor = target;
-        break;
-      }
-      // If the constructor is nested inside the object (e.g., window.v86.V86Starter)
-      if (target.V86Starter) {
-        StarterConstructor = target.V86Starter;
-        break;
-      }
-      // Check for ES Module default exports (e.g., window.v86.default)
-      if (target.default && (target.default.name === 'V86Starter' || typeof target.default === 'function')) {
-        StarterConstructor = target.default;
-        break;
-      }
-    }
+  } else if (typeof window.v86 !== "undefined" && window.v86.V86Starter) {
+    StarterConstructor = window.v86.V86Starter;
   }
 
-  // Fallback diagnostic block if search fails
   if (!StarterConstructor) {
-    console.warn("Direct V86Starter global not found. Found namespaces:", Object.keys(window).filter(k => k.toLowerCase().includes('v86')));
-    console.log("Inspected Namespace Payload:", window[Object.keys(window).filter(k => k.toLowerCase().includes('v86'))[0]]);
-    
-    addChatMessage("system", "❌ V86 Engine binding missing. Check console for Inspected Namespace Payload.", "System");
+    console.warn("Direct V86Starter global not found. Checking scope namespaces...");
+    addChatMessage("system", "❌ V86 Engine structural binding missing.", "System");
     return;
   }
 
@@ -462,20 +437,42 @@ function initV86Emulator(customDiskPath = null) {
       bios: { url: "/v86/seabios.bin" },
       vga_bios: { url: "/v86/vgabios.bin" },
       autostart: true,
+      disable_audio: true, // Silences the browser AudioContext autoplay warnings
       serial_containers: document.getElementById("serial") ? ["#serial"] : undefined
     };
 
+    // If a user uploaded a custom CDROM/Disk image, boot that directly
     if (customDiskPath) {
       config.cdrom = { url: customDiskPath };
     } else {
-config.hda = {
-  url: "/api/proxy-vm-image", // Points to your newly created worker proxy
-  async: true,
-  use_diskcache: false
-};
+      // Notify the user since downloading/decompressing the system image into RAM takes a few seconds
+      addChatMessage("system", "⏳ Downloading and decompressing system image into memory...", "System");
+
+      // 1. Fetch the compressed file through your local Cloudflare Worker proxy
+      const response = await fetch("/api/proxy-vm-image");
+      if (!response.ok) {
+        throw new Error(`Failed to fetch system asset proxy: ${response.statusText}`);
+      }
+
+      const compressedBuffer = await response.arrayBuffer();
+
+      // 2. Safe check for the fzstd unpacking dependency
+      if (typeof fzstd === "undefined") {
+        throw new Error("The fzstd decompression library failed to load from CDN.");
+      }
+
+      // 3. Decompress the .zst payload directly into a raw byte array (.img representation)
+      const decompressedBuffer = fzstd.decompress(new Uint8Array(compressedBuffer));
+      
+      // 4. Pass the raw uncompressed buffer block directly to the emulator engine
+      config.hda = {
+        buffer: decompressedBuffer
+      };
+
+      addChatMessage("system", "🚀 Decompression complete. Initializing virtual hardware layers...", "System");
     }
 
-    // Initialize layout instance using our resolved constructor reference
+    // Initialize layout instance using our resolved constructor and memory buffer configuration
     emulator = new StarterConstructor(config);
     vmBooted = true;
     
