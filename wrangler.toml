@@ -7,11 +7,3 @@ directory = "./public"
 
 [observability]
 enabled = true
-
-[[kv_namespaces]]
-binding = "VM_STORAGE"
-id = "your-kv-namespace-id"
-
-[[kv_namespaces]]
-binding = "SESSION_STORAGE"
-id = "your-session-kv-id"
