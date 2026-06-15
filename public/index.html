@@ -214,6 +214,12 @@ button:active {
   background: #003d7a;
 }
 
+button:disabled {
+  background: #ccc;
+  color: #999;
+  cursor: not-allowed;
+}
+
 button.secondary {
   background: #f0f0f0;
   color: #1a1a1a;
@@ -289,6 +295,11 @@ button.secondary:hover {
 let ws;
 let emulator;
 let sessionId = null;
+let vmBooted = false;
+let vmReady = false;
+let serialBuffer = "";
+let commandQueue = [];
+let isProcessing = false;
 
 const sessionEl = document.getElementById("session");
 const promptEl = document.getElementById("prompt");
@@ -388,6 +399,86 @@ function addFilesExport(files) {
   chatEl.scrollTop = chatEl.scrollHeight;
 }
 
+function monitorSerialPort() {
+  if (!emulator) return;
+  
+  emulator.add_listener("serial0-output-char", (char) => {
+    serialBuffer += char;
+    
+    // Check if we got a prompt (# or $ usually indicates shell prompt)
+    if (serialBuffer.includes("#") || serialBuffer.includes("$")) {
+      vmReady = true;
+      if (vmBooted && serialBuffer.length > 2) {
+        addChatMessage("system", "✓ VM ready - ttyS0 responding", "System");
+        vmBooted = false; // Only show once
+      }
+    }
+  });
+}
+
+async function executeCommand(cmd) {
+  if (!emulator) return "";
+  
+  // Send command to serial port
+  emulator.serial0_send(cmd + "\n");
+  
+  // Wait for response
+  return new Promise((resolve) => {
+    let output = "";
+    let timeout = setTimeout(() => {
+      resolve(output);
+    }, 2000);
+    
+    const listener = (char) => {
+      output += char;
+      
+      // Reset timeout on each character received
+      clearTimeout(timeout);
+      timeout = setTimeout(() => {
+        emulator.remove_listener("serial0-output-char", listener);
+        resolve(output);
+      }, 1000);
+    };
+    
+    emulator.add_listener("serial0-output-char", listener);
+  });
+}
+
+async function processQueueItem(item) {
+  isProcessing = true;
+  
+  try {
+    // EXECUTE
+    addCommandOutput(item.cmd);
+    
+    // WAIT - Send to VM and get response
+    if (item.cmd.command) {
+      const output = await executeCommand(item.cmd.command);
+      addCommandResult(item.cmd, output);
+      serialBuffer = output;
+    }
+    
+    // PLAN - Send output to LLM for next action
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({
+        type: "llm_query",
+        payload: {
+          prompt: `VM Output:\n${serialBuffer}\n\nWhat should I do next?`,
+          vmOutput: serialBuffer
+        }
+      }));
+    }
+  } catch (e) {
+    console.error("Queue processing error:", e);
+  } finally {
+    isProcessing = false;
+    // Process next item in queue
+    if (commandQueue.length > 0) {
+      setTimeout(() => processQueueItem(commandQueue.shift()), 500);
+    }
+  }
+}
+
 function connect() {
   const protocol = location.protocol === "https:" ? "wss:" : "ws:";
   ws = new WebSocket(`${protocol}//${location.host}/ws`);
@@ -403,14 +494,21 @@ function connect() {
         break;
 
       case "boot_confirm":
-        addChatMessage("system", "✓ VM is ready", "System");
+        vmBooted = true;
+        addChatMessage("system", "⏳ VM booting...", "System");
         break;
 
       case "llm_response":
         addChatMessage("llm", msg.response, "Assistant");
         if (msg.commands && msg.commands.length > 0) {
           msg.commands.forEach(cmd => {
-            addCommandOutput(cmd);
+            // Queue commands for execution
+            if (!isProcessing) {
+              commandQueue.push({ cmd });
+              processQueueItem(commandQueue.shift());
+            } else {
+              commandQueue.push({ cmd });
+            }
           });
         }
         break;
@@ -436,39 +534,73 @@ function connect() {
   });
 }
 
+
+
 function startVM() {
   if (typeof V86Starter === "undefined") {
     console.error("v86 not loaded");
     return;
   }
 
-  emulator = new V86Starter({
-    wasm_path: "/v86/v86.wasm",
-    memory_size: 512 * 1024 * 1024,
-    vga_memory_size: 16 * 1024 * 1024,
-    screen_container: screen,
-    bios: {
-      url: "/v86/seabios.bin"
-    },
-    vga_bios: {
-      url: "/v86/vgabios.bin"
-    },
-    hda: {
-      url: "https://raw.githubusercontent.com/sriail/Iris-Devbox/main/public/vm/iris-ai-vm.img.zst"
-    },
-    autostart: true
-  });
+  try {
+    emulator = new V86Starter({
+      wasm_path: "/v86/v86.wasm",
+      memory_size: 512 * 1024 * 1024,
+      vga_memory_size: 16 * 1024 * 1024,
+      screen_container: screen,
+      bios: {
+        url: "/v86/seabios.bin"
+      },
+      vga_bios: {
+        url: "/v86/vgabios.bin"
+      },
+      hda: {
+        url: "https://raw.githubusercontent.com/sriail/Iris-Devbox/main/public/vm/iris-ai-vm.img.zst",
+        async: true,
+        use_diskcache: false
+      },
+      autostart: true,
+      serial_containers: ["#serial"]
+    });
 
-  emulator.add_listener("emulator-started", () => {
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({
-        type: "vm_booted"
-      }));
-    }
-  });
+    // Setup serial port monitoring immediately
+    monitorSerialPort();
+
+    emulator.add_listener("emulator-started", () => {
+      addChatMessage("system", "✓ Emulator started", "System");
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({
+          type: "vm_booted"
+        }));
+      }
+    });
+
+    emulator.add_listener("serial0-output-char", (char) => {
+      serialBuffer += char;
+      
+      // Detect shell prompt
+      if ((serialBuffer.includes("#") || serialBuffer.includes("$")) && serialBuffer.length > 2) {
+        if (!vmReady) {
+          vmReady = true;
+          addChatMessage("system", "✓ VM ready - shell prompt detected", "System");
+          // Ready to accept LLM queries
+          sendBtn.disabled = false;
+        }
+      }
+    });
+
+  } catch (e) {
+    console.error("V86 initialization error:", e);
+    addChatMessage("system", `Error: ${e.message}`, "System");
+  }
 }
 
 sendBtn.addEventListener("click", () => {
+  if (!vmReady) {
+    addChatMessage("system", "⏳ VM still booting... please wait", "System");
+    return;
+  }
+
   const prompt = promptEl.value.trim();
 
   if (!prompt || !ws || ws.readyState !== WebSocket.OPEN) {
@@ -520,6 +652,7 @@ fileInput.addEventListener("change", async event => {
 });
 
 window.addEventListener("load", () => {
+  sendBtn.disabled = true;
   connect();
   setTimeout(startVM, 500);
 });
