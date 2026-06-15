@@ -404,12 +404,9 @@ function addFilesExport(files) {
 }
 
 // --- Adaptive V86 Emulator Engine Initialization ---
-// --- Finalized V86 Emulator Engine Initialization ---
 async function initV86Emulator(customDiskPath = null) {
-  // Direct target acquired from your console diagnostics
   let StarterConstructor = window.V86;
 
-  // Fallback chain just in case of environment shifts
   if (!StarterConstructor) {
     if (typeof window.V86Starter === "function") {
       StarterConstructor = window.V86Starter;
@@ -419,12 +416,10 @@ async function initV86Emulator(customDiskPath = null) {
   }
 
   if (!StarterConstructor) {
-    console.error("❌ Critical: V86 constructor binding missing from window scope.");
-    addChatMessage("system", "❌ V86 Engine binding missing. Check developer console.", "System");
+    addChatMessage("system", "❌ V86 Engine binding missing.", "System");
     return;
   }
 
-  // Teardown pre-existing instances gracefully to avoid canvas rendering conflicts
   if (emulator) {
     try { emulator.destroy(); } catch(e) {}
   }
@@ -438,41 +433,22 @@ async function initV86Emulator(customDiskPath = null) {
       bios: { url: "/v86/seabios.bin" },
       vga_bios: { url: "/v86/vgabios.bin" },
       autostart: true,
-      disable_audio: true, // Silences browser AudioContext autoplay warnings
+      disable_audio: true, 
       serial_containers: document.getElementById("serial") ? ["#serial"] : undefined
     };
 
-    // If a user uploaded a custom CDROM/Disk image, boot that directly
     if (customDiskPath) {
       config.cdrom = { url: customDiskPath };
     } else {
-      addChatMessage("system", "⏳ Downloading and decompressing system image into memory...", "System");
-
-      // 1. Fetch the compressed file through your local Cloudflare Worker proxy
-      const response = await fetch("/api/proxy-vm-image");
-      if (!response.ok) {
-        throw new Error(`Failed to fetch system asset proxy: ${response.statusText}`);
-      }
-
-      const compressedBuffer = await response.arrayBuffer();
-
-      // 2. Safety check for the fzstd unpacking dependency
-      if (typeof fzstd === "undefined") {
-        throw new Error("The fzstd decompression library failed to load from CDN.");
-      }
-
-      // 3. Decompress the .zst payload directly into a raw byte array
-      const decompressedBuffer = fzstd.decompress(new Uint8Array(compressedBuffer));
+      addChatMessage("system", "🚀 Initializing streamed runtime engine connection...", "System");
       
-      // 4. Feed the raw, uncompressed buffer straight to the emulator
       config.hda = {
-        buffer: decompressedBuffer
+        url: "/api/proxy-vm-image",
+        async: true,
+        use_diskcache: true // Caches decompressed blocks locally in IndexedDB for instant reboots
       };
-
-      addChatMessage("system", "🚀 Decompression complete. Initializing virtual hardware layers...", "System");
     }
 
-    // Initialize layout instance using our target constructor
     emulator = new StarterConstructor(config);
     vmBooted = true;
     
