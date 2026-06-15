@@ -16,26 +16,17 @@ var worker_default = {
     
     // --- ADDED: GitHub Proxy Handler for v86 Image ---
 if (url.pathname === "/api/proxy-vm-image") {
-  // If using Gzip (.gz), change the extension here
-  const targetUrl = "https://raw.githubusercontent.com/sriail/Iris-Devbox/main/public/vm/iris-ai-vm.img.gz";
+  // Point to your compressed file on GitHub (can be .zst or .gz)
+  const targetUrl = "https://raw.githubusercontent.com/sriail/Iris-Devbox/main/public/vm/iris-ai-vm.img.zst";
   
   const response = await fetch(targetUrl);
-  if (!response.ok) return new Response("Failed to fetch image from storage", { status: 500 });
+  if (!response.ok) return new Response("Failed to fetch image", { status: 500 });
 
-  // Pipe the incoming zipped storage stream through the worker's native hardware decompressor
-  const decompressionStream = new DecompressionStream("gzip");
-  const decompressedStream = response.body.pipeThrough(decompressionStream);
-
-  // Return the raw, uncompressed stream back to the browser with streaming headers
-  const newHeaders = new Headers();
-  newHeaders.set("Content-Type", "application/octet-stream");
+  const newHeaders = new Headers(response.headers);
   newHeaders.set("Access-Control-Allow-Origin", "*");
   newHeaders.set("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
-  newHeaders.set("Access-Control-Allow-Headers", "Range, Content-Type");
-  newHeaders.set("Access-Control-Expose-Headers", "Accept-Ranges, Content-Length");
-  newHeaders.set("Accept-Ranges", "bytes");
-
-  return new Response(decompressedStream, {
+  
+  return new Response(response.body, {
     status: 200,
     headers: newHeaders
   });
