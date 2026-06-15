@@ -440,12 +440,14 @@ async function initV86Emulator(customDiskPath = null) {
     if (customDiskPath) {
       config.cdrom = { url: customDiskPath };
     } else {
-      addChatMessage("system", "🚀 Initializing streamed runtime engine connection...", "System");
+      addChatMessage("system", "🚀 Mounting compressed virtual storage stream...", "System");
       
       config.hda = {
         url: "/api/proxy-vm-image",
         async: true,
-        use_diskcache: true // Caches decompressed blocks locally in IndexedDB for instant reboots
+        // CRITICAL: Replace this number with the EXACT byte size of your UNCOMPRESSED .img file
+        size: 2486050828, 
+        use_diskcache: true
       };
     }
 
