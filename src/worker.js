@@ -13,7 +13,6 @@ var worker_default = {
       return handleUpload(request);
     }
     
-    // FIX: Safely fall back if the static assets binding is undefined
     if (env.ASSETS && typeof env.ASSETS.fetch === "function") {
       return env.ASSETS.fetch(request);
     }
@@ -21,6 +20,7 @@ var worker_default = {
     return new Response("Not Found", { status: 404 });
   }
 };
+
 async function handleWebSocket(env) {
   const pair = new WebSocketPair();
   const client = pair[0];
@@ -30,6 +30,7 @@ async function handleWebSocket(env) {
   sessions.set(sessionId, {
     ws: server,
     files: /* @__PURE__ */ new Map(),
+    chatHistory: [],
     started: Date.now()
   });
   server.send(JSON.stringify({
@@ -39,11 +40,7 @@ async function handleWebSocket(env) {
   server.addEventListener("message", async (event) => {
     try {
       const data = JSON.parse(event.data);
-      await handleMessage(
-        data,
-        sessionId,
-        env
-      );
+      await handleMessage(data, sessionId, env);
     } catch (err) {
       console.error(err);
     }
@@ -57,29 +54,21 @@ async function handleWebSocket(env) {
   });
 }
 __name(handleWebSocket, "handleWebSocket");
+
 async function handleUpload(request) {
   const url = new URL(request.url);
   const sid = url.searchParams.get("sid");
   const session = sessions.get(sid);
   if (!session) {
-    return new Response(
-      "Invalid Session",
-      { status: 400 }
-    );
+    return new Response("Invalid Session", { status: 400 });
   }
   const form = await request.formData();
   const file = form.get("file");
   if (!file) {
-    return new Response(
-      "Missing File",
-      { status: 400 }
-    );
+    return new Response("Missing File", { status: 400 });
   }
   const buffer = await file.arrayBuffer();
-  session.files.set(
-    file.name,
-    buffer
-  );
+  session.files.set(file.name, buffer);
   session.ws.send(JSON.stringify({
     type: "file_added",
     name: file.name
@@ -90,9 +79,11 @@ async function handleUpload(request) {
   });
 }
 __name(handleUpload, "handleUpload");
+
 async function handleMessage(data, sessionId, env) {
   const session = sessions.get(sessionId);
   if (!session) return;
+  
   switch (data.type) {
     case "vm_booted":
       session.ws.send(JSON.stringify({
@@ -100,29 +91,126 @@ async function handleMessage(data, sessionId, env) {
         sessionId
       }));
       break;
+      
     case "llm_query":
-      const answer = await queryGroq(
-        data.payload.prompt,
-        env
-      );
+      const prompt = data.payload.prompt;
+      const fileList = [...session.files.keys()];
+      
+      // Add user message to history
+      session.chatHistory.push({
+        role: "user",
+        content: prompt
+      });
+      
+      const response = await queryGroq(prompt, fileList, session.chatHistory, env);
+      
+      // Add assistant response to history
+      session.chatHistory.push({
+        role: "assistant",
+        content: response
+      });
+      
+      // Parse for vm-tool commands
+      const commands = parseVMCommands(response);
+      
       session.ws.send(JSON.stringify({
         type: "llm_response",
-        response: answer
+        response: response,
+        commands: commands
       }));
+      
+      // Execute commands if any
+      for (const cmd of commands) {
+        const cmdOutput = await executeVMCommand(cmd);
+        session.ws.send(JSON.stringify({
+          type: "command_executed",
+          command: cmd,
+          output: cmdOutput
+        }));
+      }
       break;
+      
     case "file_list":
       session.ws.send(JSON.stringify({
         type: "file_list",
-        files: [
-          ...session.files.keys()
-        ]
+        files: [...session.files.keys()]
+      }));
+      break;
+      
+    case "export_files":
+      const homeFiles = data.payload.files || [];
+      session.ws.send(JSON.stringify({
+        type: "files_exported",
+        files: homeFiles
       }));
       break;
   }
 }
 __name(handleMessage, "handleMessage");
-async function queryGroq(prompt, env) {
+
+function parseVMCommands(response) {
+  const commands = [];
+  const lines = response.split('\n');
+  
+  for (const line of lines) {
+    try {
+      // Try to parse JSON from the line
+      const trimmed = line.trim();
+      if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+        const obj = JSON.parse(trimmed);
+        if (obj["vm-tool"]) {
+          commands.push({
+            tool: obj["vm-tool"],
+            reasoning: obj.reasoning || "",
+            command: obj["command-sent"] || obj.command || ""
+          });
+        }
+      }
+    } catch (e) {
+      // Skip lines that aren't valid JSON
+    }
+  }
+  
+  return commands;
+}
+__name(parseVMCommands, "parseVMCommands");
+
+async function executeVMCommand(cmd) {
+  // This is a simulation - in a real scenario, you'd communicate with the actual VM
+  // For now, we return simulated outputs
+  switch (cmd.tool) {
+    case "command":
+      return `$ ${cmd.command}\n[Command executed in VM]\n`;
+    case "list-files":
+      return `total 48\ndrwxr-xr-x  5 user user 4096 Jun 15 10:30 .\ndrwxr-xr-x 20 root root 4096 Jun 15 09:00 ..\n-rw-r--r--  1 user user  220 Jun 15 10:20 package.json\n-rw-r--r--  1 user user 2831 Jun 15 10:25 index.js\ndrwxr-xr-x  2 user user 4096 Jun 15 10:28 node_modules`;
+    case "help":
+      return `Available VM Tools:\n  command - Execute shell commands\n  list-files - List files in current directory\n  help - Show this help message`;
+    default:
+      return `Unknown command: ${cmd.tool}`;
+  }
+}
+__name(executeVMCommand, "executeVMCommand");
+
+async function queryGroq(prompt, fileList, chatHistory, env) {
   try {
+    const systemPrompt = `You are a helpful AI assistant running inside a Linux VM development environment. You have access to a terminal and can help the user with development tasks.
+
+You can use the following tools by responding with JSON objects on separate lines:
+1. To execute shell commands, include: {"vm-tool": "command", "reasoning": "explanation", "command-sent": "your command"}
+2. To list files: {"vm-tool": "list-files", "reasoning": "explanation"}
+3. To show help: {"vm-tool": "help", "reasoning": "explanation"}
+
+Always explain your reasoning before providing commands. Be concise and helpful.
+${fileList.length > 0 ? `\nUser has uploaded files: ${fileList.join(", ")}` : ""}`;
+
+    const messages = [
+      {
+        role: "system",
+        content: systemPrompt
+      },
+      ...chatHistory
+    ];
+
     const response = await fetch(
       "https://api.groq.com/openai/v1/chat/completions",
       {
@@ -132,28 +220,29 @@ async function queryGroq(prompt, env) {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          model: env.GROQ_MODEL || "llama-3.3-70b-versatile",
-          messages: [
-            {
-              role: "system",
-              content: "You are an assistant inside a Linux VM."
-            },
-            {
-              role: "user",
-              content: prompt
-            }
-          ]
+          model: "llama-3.1-8b-instant",
+          messages: messages,
+          max_tokens: 1000,
+          temperature: 0.7
         })
       }
     );
+    
+    if (!response.ok) {
+      const error = await response.text();
+      console.error("Groq API error:", error);
+      return `Error: Failed to get response from LLM (${response.status})`;
+    }
+    
     const json = await response.json();
     return json?.choices?.[0]?.message?.content || "No response.";
   } catch (err) {
-    return err.message;
+    console.error("Query error:", err);
+    return `Error: ${err.message}`;
   }
 }
 __name(queryGroq, "queryGroq");
+
 export {
   worker_default as default
 };
-//# sourceMappingURL=worker.js.map
