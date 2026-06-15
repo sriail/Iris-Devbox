@@ -564,99 +564,71 @@ function startVM() {
     });
 
     // Setup serial port monitoring immediately
-    monitorSerialPort();
+    // 1. Ensure file inputs append a valid FormData boundary structure
+fileInput.addEventListener("change", async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
 
-    emulator.add_listener("emulator-started", () => {
-      addChatMessage("system", "✓ Emulator started", "System");
-      if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({
-          type: "vm_booted"
-        }));
-      }
-    });
+  // Track state safely before dispatching request
+  addChatMessage("user", `Uploading file: ${file.name}...`);
 
-    emulator.add_listener("serial0-output-char", (char) => {
-      serialBuffer += char;
-      
-      // Detect shell prompt
-      if ((serialBuffer.includes("#") || serialBuffer.includes("$")) && serialBuffer.length > 2) {
-        if (!vmReady) {
-          vmReady = true;
-          addChatMessage("system", "✓ VM ready - shell prompt detected", "System");
-          // Ready to accept LLM queries
-          sendBtn.disabled = false;
-        }
-      }
-    });
-
-  } catch (e) {
-    console.error("V86 initialization error:", e);
-    addChatMessage("system", `Error: ${e.message}`, "System");
-  }
-}
-
-sendBtn.addEventListener("click", () => {
-  if (!vmReady) {
-    addChatMessage("system", "⏳ VM still booting... please wait", "System");
-    return;
-  }
-
-  const prompt = promptEl.value.trim();
-
-  if (!prompt || !ws || ws.readyState !== WebSocket.OPEN) {
-    return;
-  }
-
-  addChatMessage("user", prompt, "You");
-
-  ws.send(JSON.stringify({
-    type: "llm_query",
-    payload: {
-      prompt
-    }
-  }));
-
-  promptEl.value = "";
-});
-
-promptEl.addEventListener("keydown", (e) => {
-  if (e.key === "Enter" && e.ctrlKey) {
-    sendBtn.click();
-  }
-});
-
-fileInput.addEventListener("change", async event => {
-  const file = event.target.files[0];
-
-  if (!file || !sessionId) {
-    return;
-  }
-
-  const form = new FormData();
-  form.append("file", file);
+  const formData = new FormData();
+  formData.append("file", file); // Make sure "file" matches your backend's field name
 
   try {
+    // Dynamically safely target the active session route
     const response = await fetch(`/upload?sid=${sessionId}`, {
       method: "POST",
-      body: form
+      body: formData // Never manually define Content-Type headers when sending FormData
     });
 
     if (!response.ok) {
-      addChatMessage("system", "Upload failed", "System");
+      const errorText = await response.text();
+      throw new Error(`Server returned ${response.status}: ${errorText}`);
     }
-  } catch (e) {
-    addChatMessage("system", `Upload error: ${e.message}`, "System");
+
+    const result = await response.json();
+    addChatMessage("llm", "File uploaded successfully. Preparing to boot VM...");
+    
+    // ONLY initialize VM when upload resolves completely
+    initV86Emulator(result.filePath || null);
+
+  } catch (err) {
+    console.error("Upload failure pipeline executed:", err);
+    addChatMessage("llm", `❌ Error uploading asset: ${err.message}`);
   }
-  
-  fileInput.value = "";
 });
 
-window.addEventListener("load", () => {
-  sendBtn.disabled = true;
-  connect();
-  setTimeout(startVM, 500);
-});
-</script>
+// 2. Safe wrap your initialization function to handle missing assets gracefully
+function initV86Emulator(customDiskPath = null) {
+  try {
+    // Safeguard against missing libv86 components
+    if (typeof V86Starter !== "function") {
+      throw new Error("v86 engine library failed to compile or inject into DOM safely.");
+    }
+
+    emulator = new V86Starter({
+      screen_container: document.getElementById("screen"),
+      bios: { url: "/v86/bios/seabios.bin" },
+      vga_bios: { url: "/v86/bios/vgabios.bin" },
+      // Dynamically load default OS or your freshly uploaded disk target
+      cdrom: customDiskPath ? { url: customDiskPath } : { url: "/v86/images/linux.iso" },
+      autostart: true,
+    });
+
+    emulator.add_listener("serial0-output-char", function(char) {
+      serialBuffer += char;
+      // Your terminal parsing loop here
+    });
+
+    vmBooted = true;
+    sessionEl.textContent = sessionId;
+
+  } catch (error) {
+    console.error("Critical failure during startVM layout runtime:", error);
+    addChatMessage("llm", `💥 startVM Failure: ${error.message}`);
+  }
+}
 
 </body>
 </html>
