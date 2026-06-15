@@ -6,12 +6,37 @@ var sessions = /* @__PURE__ */ new Map();
 var worker_default = {
   async fetch(request, env) {
     const url = new URL(request.url);
+    
     if (url.pathname === "/ws" && request.headers.get("Upgrade")?.toLowerCase() === "websocket") {
       return handleWebSocket(env);
     }
     if (url.pathname === "/upload" && request.method === "POST") {
       return handleUpload(request);
     }
+    
+    // --- ADDED: GitHub Proxy Handler for v86 Image ---
+    if (url.pathname === "/api/proxy-vm-image") {
+      const targetUrl = "https://raw.githubusercontent.com/sriail/Iris-Devbox/main/public/vm/iris-ai-vm.img.zst";
+      
+      const response = await fetch(targetUrl, {
+        headers: {
+          "Range": request.headers.get("Range") || ""
+        }
+      });
+
+      const newHeaders = new Headers(response.headers);
+      newHeaders.set("Access-Control-Allow-Origin", "*");
+      newHeaders.set("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
+      newHeaders.set("Access-Control-Allow-Headers", "Range, Content-Type");
+      newHeaders.set("Access-Control-Expose-Headers", "Content-Range, Content-Length, Accept-Ranges");
+
+      return new Response(response.body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: newHeaders
+      });
+    }
+    // --- END OF PROXY HANDLER ---
     
     if (env.ASSETS && typeof env.ASSETS.fetch === "function") {
       return env.ASSETS.fetch(request);
@@ -20,31 +45,6 @@ var worker_default = {
     return new Response("Not Found", { status: 404 });
   }
 };
-
-// Add this route handler to your backend worker router
-if (url.pathname === "/api/proxy-vm-image") {
-  const targetUrl = "https://raw.githubusercontent.com/sriail/Iris-Devbox/main/public/vm/iris-ai-vm.img.zst";
-  
-  const response = await fetch(targetUrl, {
-    headers: {
-      // Pass along range headers if v86 sends them
-      "Range": request.headers.get("Range") || ""
-    }
-  });
-
-  // Create a new response to append permissive CORS headers
-  const newHeaders = new Headers(response.headers);
-  newHeaders.set("Access-Control-Allow-Origin", "*");
-  newHeaders.set("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
-  newHeaders.set("Access-Control-Allow-Headers", "Range, Content-Type");
-  newHeaders.set("Access-Control-Expose-Headers", "Content-Range, Content-Length, Accept-Ranges");
-
-  return new Response(response.body, {
-    status: response.status,
-    statusText: response.statusText,
-    headers: newHeaders
-  });
-}
 
 async function handleWebSocket(env) {
   const pair = new WebSocketPair();
