@@ -16,7 +16,7 @@ This tool is a key facit in your tool kit, allowing you to send commands, and fo
 {
  "vm-tool": "command-tool",
  "reasoning": “LLM REASONING GOSE HERE FOR USER”,
- "command-sent": “EXAMPLE COMMAND HERE”,
+ "command-sent": “EXAMPLE COMMAND HERE”
 }
 ```
 
@@ -41,7 +41,7 @@ This tool allows you to quickly list and find files in the devbox, especially in
 ```json
 {
  "vm-tool": "list-files",
- "reasoning": “LLM REASONING GOSE HERE FOR USER”,
+ "reasoning": “LLM REASONING GOSE HERE FOR USER”
 }
 ```
 
@@ -51,7 +51,7 @@ This tool allows you to quickly list and find files in the devbox, especially in
 {
  "request-sucess": true
  "vm-tool": "list-files",
- "response": “EXAMPLE FILES HERE”,
+ "response": “EXAMPLE FILES HERE”
 }
 ```
 
@@ -68,7 +68,7 @@ This is a key foundational tool in your toolkit
 {
  "vm-tool": "send-text",
  "text": "EXAMPLE TEXT HERE"
- "reasoning": “LLM REASONING GOSE HERE FOR USER”,
+ "reasoning": “LLM REASONING GOSE HERE FOR USER”
 }
 ```
 
@@ -95,8 +95,8 @@ This tool is crucial for using many GNU tools, which may require keybinds to exe
 ```json
 {
  "vm-tool": "send-keypress",
- "key": "CMD" //can also send keyboard shortcuts by doing things such as CMD, X with comma
- "reasoning": “LLM REASONING GOSE HERE FOR USER”,
+ "key": "CMD, X" //can also send keyboard shortcuts by doing things such as CMD, X with comma
+ "reasoning": “LLM REASONING GOSE HERE FOR USER”
 }
 ```
 
@@ -124,7 +124,7 @@ This tool allows you to view all text in the console, which is key to review fil
 ```json
 {
  "vm-tool": "veiw-console",
- "reasoning": “LLM REASONING GOSE HERE FOR USER”,
+ "reasoning": “LLM REASONING GOSE HERE FOR USER”
 }
 ``` 
 
@@ -134,7 +134,7 @@ This tool allows you to view all text in the console, which is key to review fil
 {
  "request-sucess": true
  "vm-tool": "veiw-console",
- "Console-contents": "EXAMPLE OF CONSOLES CONTENTS”,
+ "Console-contents": "EXAMPLE OF CONSOLES CONTENTS”
 }
 ``` 
 
