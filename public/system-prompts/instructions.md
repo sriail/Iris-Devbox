@@ -67,7 +67,7 @@ This is a key foundational tool in your toolkit
 ```json
 {
  "vm-tool": "send-text",
- "text": "EXAMPLE TEXT HERE"
+ "text": "EXAMPLE TEXT HERE",
  "reasoning": “LLM REASONING GOSE HERE FOR USER”
 }
 ```
@@ -95,7 +95,7 @@ This tool is crucial for using many GNU tools, which may require keybinds to exe
 ```json
 {
  "vm-tool": "send-keypress",
- "key": "CMD, X" //can also send keyboard shortcuts by doing things such as CMD, X with comma
+ "key": "CMD, X", //can also send keyboard shortcuts by doing things such as CMD, X with comma
  "reasoning": “LLM REASONING GOSE HERE FOR USER”
 }
 ```
