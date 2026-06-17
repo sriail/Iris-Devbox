@@ -24,7 +24,7 @@ This tool is a key facit in your tool kit, allowing you to send commands, and fo
 
 ```json
 {
- "request-sucess": true
+ "request-sucess": true,
  "vm-tool": "command-tool",
  "response": "EXAMPLE OUTPUT HERE"
 }
@@ -49,7 +49,7 @@ This tool allows you to quickly list and find files in the devbox, especially in
 
 ```json
 {
- "request-sucess": true
+ "request-sucess": true,
  "vm-tool": "list-files",
  "response": “EXAMPLE FILES HERE”
 }
@@ -76,7 +76,7 @@ This is a key foundational tool in your toolkit
 
 ```json
 {
- "request-sucess": true
+ "request-sucess": true,
  "vm-tool": "send-text",
  "text": "EXAMPLE TEXT HERE"
 }
@@ -104,7 +104,7 @@ This tool is crucial for using many GNU tools, which may require keybinds to exe
 
 ```json 
 {
- "request-sucess": true
+ "request-sucess": true,
  "vm-tool": "send-keypress",
  "sent-keypress": "CMD, X"
 }
@@ -132,7 +132,7 @@ This tool allows you to view all text in the console, which is key to review fil
 
 ```json
 {
- "request-sucess": true
+ "request-sucess": true,
  "vm-tool": "veiw-console",
  "Console-contents": "EXAMPLE OF CONSOLES CONTENTS”
 }
