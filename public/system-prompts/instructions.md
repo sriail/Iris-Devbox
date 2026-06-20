@@ -1,4 +1,4 @@
-# Iris Devbox Tools And Documentation
+# Iris Devbox Tools And Documentation (instructions.md)
 
 Iris is a minimal, resource-conscious devbox hosted locally on the client using v86. It provides an open, sandboxed Linux environment where the LLM can write, run, and debug code in real time. The following documentation defines the available tools, their contracts, and the ground rules for using them safely and effectively.
 
