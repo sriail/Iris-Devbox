@@ -11,7 +11,7 @@
         --w2: #e9e9e9; /* Off White - Chat background, secondary buttons */
         --w3: #e5e7eb; /* Light Gray - Borders, hover states */
 
-        /* 1 Shade of Blue Accent */
+        /* 1 Shade of Blue/Green Accent */
         --accent: #25e69e;
         --accent-hover: #1bc985;
 
@@ -229,10 +229,9 @@
       }
       .file-action-btn:hover {
         background: rgba(0, 0, 0, 0.1);
-        color: var(--text-primary);
       }
-      .file-action-btn.delete:hover {
-        color: var(--danger);
+      .file-action-btn.delete:hover .ic {
+        filter: brightness(0) saturate(100%) invert(40%) sepia(93%) saturate(7434%) hue-rotate(354deg) brightness(99%) contrast(95%);
       }
 
       .tree-children {
@@ -564,6 +563,7 @@
         background: rgba(0, 0, 0, 0.05);
         color: var(--accent);
       }
+      .action-btn:hover .ic { filter: brightness(0) saturate(100%) invert(72%) sepia(49%) saturate(389%) hue-rotate(107deg) brightness(95%) contrast(92%); }
 
       /* Controls */
       #controls {
@@ -613,6 +613,7 @@
       .chip-remove:hover {
         background: var(--danger);
       }
+      .chip-remove:hover .ic { filter: brightness(0) invert(1); }
 
       #prompt {
         width: 100%;
@@ -633,7 +634,7 @@
         outline: none;
         border-color: var(--accent);
         background: var(--w1);
-        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        box-shadow: 0 0 0 3px rgba(37, 230, 158, 0.1);
       }
 
       .button-group {
@@ -732,41 +733,33 @@
         display: none;
       }
 
-      /* SVG Icon Utilities */
-      .icon-img {
+      /* SVG Icon Utilities - Refined for Tabbler Icons */
+      .ic {
         width: 16px;
         height: 16px;
         flex-shrink: 0;
+        vertical-align: middle;
+        display: inline-block;
+        transition: filter 0.2s;
       }
-      .icon-img.sm {
-        width: 12px;
-        height: 12px;
-      }
-      .icon-img.lg {
-        width: 48px;
-        height: 48px;
-        margin-bottom: 16px;
-        opacity: 0.3;
-      }
-      .dark-icon {
-        filter: brightness(0) saturate(100%);
-        opacity: 0.6;
-      }
-      .white-icon {
-        filter: brightness(0) invert(1);
-      }
-      .gray-icon {
-        filter: brightness(0) saturate(100%);
-        opacity: 0.4;
-      }
-      .tab-btn.active .dark-icon,
-      button:hover .dark-icon {
-        opacity: 1;
-        filter: none;
-      }
-      button.secondary .dark-icon {
-        opacity: 0.8;
-      }
+      .ic.sm { width: 14px; height: 14px; }
+      .ic.lg { width: 48px; height: 48px; opacity: 0.2; margin-bottom: 16px; }
+      
+      /* Default Tabbler is black. We use filters to map to our theme colors. */
+      .ic-gray { filter: brightness(0) saturate(100%) invert(60%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%); opacity: 0.8; }
+      .ic-black { filter: brightness(0) saturate(100%); }
+      .ic-white { filter: brightness(0) invert(1); }
+      .ic-accent { filter: invert(80%) sepia(44%) saturate(402%) hue-rotate(107deg) brightness(102%) contrast(92%); }
+      .ic-danger { filter: brightness(0) saturate(100%) invert(40%) sepia(93%) saturate(7434%) hue-rotate(354deg) brightness(99%) contrast(95%); }
+      .ic-success { filter: invert(64%) sepia(87%) saturate(385%) hue-rotate(116deg) brightness(95%) contrast(85%); }
+      
+      /* Handle Hover/Active States cleanly */
+      button:hover .ic-gray, button:hover .ic-black { filter: brightness(0) invert(1); opacity: 1; }
+      .tab-btn:hover .ic-gray { filter: brightness(0) saturate(100%); opacity: 1; }
+      .tab-btn.active .ic-gray { filter: brightness(0) invert(1); opacity: 1; }
+      .mini-btn:hover .ic-gray { filter: brightness(0) saturate(100%); opacity: 1; }
+      .tree-header:hover .ic-gray { filter: brightness(0) saturate(100%); opacity: 1; }
+      .file-action-btn:hover .ic-gray { filter: brightness(0) saturate(100%); opacity: 1; }
 
       /* Custom Scrollbar Styling */
       ::-webkit-scrollbar {
@@ -816,11 +809,11 @@
     <div id="main-view">
       <div id="view-header">
         <button class="tab-btn active" data-view="devbox">
-          <img src="/assets/server-2.svg" class="icon-img sm dark-icon" />
+          <img src="/assets/server-2.svg" class="ic sm ic-gray" />
           Devbox
         </button>
         <button class="tab-btn" data-view="workspace">
-          <img src="/assets/folder.svg" class="icon-img sm dark-icon" />
+          <img src="/assets/folder.svg" class="ic sm ic-gray" />
           Workspace
         </button>
       </div>
@@ -832,16 +825,16 @@
       <div id="workspace-container" class="view-content">
         <div id="workspace-toolbar" style="display: none">
           <h3>
-            <img src="/assets/folder.svg" class="icon-img dark-icon" />
+            <img src="/assets/folder.svg" class="ic ic-accent" />
             Workspace Files
           </h3>
           <button class="mini-btn" id="download-zip-btn">
-            <img src="/assets/download.svg" class="icon-img sm dark-icon" />
+            <img src="/assets/download.svg" class="ic sm ic-gray" />
             Download .zip
           </button>
         </div>
         <div id="workspace-empty">
-          <img src="/assets/folder.svg" class="icon-img lg" />
+          <img src="/assets/folder.svg" class="ic lg ic-gray" />
           <div style="font-weight: 600; margin-bottom: 4px">
             No files in workspace
           </div>
@@ -858,11 +851,11 @@
     <div id="sidebar">
       <div class="sidebar-header">
         <div class="session-badge">
-          <img src="/assets/server-2.svg" class="icon-img sm dark-icon" />
+          <img src="/assets/server-2.svg" class="ic sm ic-gray" />
           Session: <strong id="session">pending</strong>
         </div>
         <button class="mini-btn" id="clear-chat-btn">
-          <img src="/assets/plus.svg" class="icon-img sm dark-icon" />
+          <img src="/assets/plus.svg" class="ic sm ic-gray" />
           Clear
         </button>
       </div>
@@ -878,21 +871,21 @@
         ></textarea>
         <div class="button-group">
           <button id="send">
-            <img src="/assets/send.svg" class="icon-img sm white-icon" />
+            <img src="/assets/send.svg" class="ic sm ic-white" />
             Send
           </button>
           <button class="secondary" id="upload-file-btn">
-            <img src="/assets/file-diff.svg" class="icon-img sm dark-icon" />
+            <img src="/assets/file-diff.svg" class="ic sm ic-gray" />
             File
           </button>
           <button class="secondary" id="upload-folder-btn">
-            <img src="/assets/folder.svg" class="icon-img sm dark-icon" />
+            <img src="/assets/folder.svg" class="ic sm ic-gray" />
             Folder
           </button>
           <label class="toggle-label">
             <input type="checkbox" id="thinking-toggle" />
             <span class="toggle-switch"></span>
-            <img src="/assets/brain.svg" class="icon-img sm dark-icon" />
+            <img src="/assets/brain.svg" class="ic sm ic-gray" />
             Think
           </label>
           <label class="toggle-label">
@@ -964,7 +957,12 @@
         if (label) {
           const labelEl = document.createElement("div");
           labelEl.className = "message-label";
-          labelEl.innerHTML = label;
+          let icon = "";
+          if (role === 'user') icon = '<img src="/assets/clipboard.svg" class="ic sm ic-gray" />';
+          if (role === 'llm') icon = '<img src="/assets/brain.svg" class="ic sm ic-gray" />';
+          if (role === 'system') icon = `<img src="/assets/${isError ? 'x' : 'server-2'}.svg" class="ic sm ${isError ? 'ic-danger' : 'ic-gray'}" />`;
+          
+          labelEl.innerHTML = `${icon} ${label}`;
           msgDiv.appendChild(labelEl);
         }
 
@@ -989,20 +987,20 @@
 
           const copyBtn = document.createElement("button");
           copyBtn.className = "action-btn";
-          copyBtn.innerHTML = `<img src="/assets/clipboard.svg" class="icon-img sm dark-icon" /> Copy`;
+          copyBtn.innerHTML = `<img src="/assets/clipboard.svg" class="ic sm ic-gray" /> Copy`;
           copyBtn.addEventListener("click", () => {
             navigator.clipboard.writeText(content);
-            copyBtn.innerHTML = `<img src="/assets/clipboard-check.svg" class="icon-img sm dark-icon" /> Copied!`;
+            copyBtn.innerHTML = `<img src="/assets/clipboard-check.svg" class="ic sm ic-success" /> Copied!`;
             setTimeout(
               () =>
-                (copyBtn.innerHTML = `<img src="/assets/clipboard.svg" class="icon-img sm dark-icon" /> Copy`),
+                (copyBtn.innerHTML = `<img src="/assets/clipboard.svg" class="ic sm ic-gray" /> Copy`),
               1500
             );
           });
 
           const regenBtn = document.createElement("button");
           regenBtn.className = "action-btn";
-          regenBtn.innerHTML = `<img src="/assets/refresh.svg" class="icon-img sm dark-icon" /> Regenerate`;
+          regenBtn.innerHTML = `<img src="/assets/refresh.svg" class="ic sm ic-gray" /> Regenerate`;
           regenBtn.addEventListener("click", () => {
             if (ws && ws.readyState === WebSocket.OPEN) {
               ws.send(
@@ -1039,7 +1037,7 @@
         if (quietModeEnabled) return;
         const msgDiv = document.createElement("div");
         msgDiv.className = "chat-message llm";
-        msgDiv.innerHTML = `<div class="message-label"><img src="/assets/terminal-2.svg" class="icon-img sm dark-icon" /> Command: ${
+        msgDiv.innerHTML = `<div class="message-label"><img src="/assets/terminal-2.svg" class="ic sm ic-gray" /> Command: ${
           cmd.tool || "Shell"
         }</div>`;
 
@@ -1049,7 +1047,7 @@
           reasoningDiv.style.display = "flex";
           reasoningDiv.style.alignItems = "flex-start";
           reasoningDiv.style.gap = "8px";
-          reasoningDiv.innerHTML = `<img src="/assets/brain.svg" class="icon-img sm dark-icon" style="margin-top: 2px; flex-shrink: 0;" /><span>${cmd.reasoning}</span>`;
+          reasoningDiv.innerHTML = `<img src="/assets/brain.svg" class="ic sm ic-accent" style="margin-top: 2px; flex-shrink: 0;" /><span>${cmd.reasoning}</span>`;
           msgDiv.appendChild(reasoningDiv);
         }
         if (cmd.command) {
@@ -1066,7 +1064,7 @@
         if (quietModeEnabled) return;
         const msgDiv = document.createElement("div");
         msgDiv.className = "chat-message llm";
-        msgDiv.innerHTML = `<div class="message-label">Output</div>`;
+        msgDiv.innerHTML = `<div class="message-label"><img src="/assets/terminal-2.svg" class="ic sm ic-gray" /> Output</div>`;
         const outputDiv = document.createElement("div");
         outputDiv.className = "cmd-block output";
         outputDiv.textContent = output;
@@ -1107,7 +1105,7 @@
       <span class="chevron">${isFile ? "" : "▶"}</span>
       <img src="${
         isFile ? "/assets/file-diff.svg" : "/assets/folder.svg"
-      }" class="icon-img sm dark-icon" />
+      }" class="ic sm ic-gray" />
       <span class="name">${key}</span>
     `;
 
@@ -1115,8 +1113,8 @@
               const actions = document.createElement("div");
               actions.className = "file-actions";
               actions.innerHTML = `
-        <button class="file-action-btn" title="Download"><img src="/assets/download.svg" class="icon-img sm dark-icon" /></button>
-        <button class="file-action-btn delete" title="Delete"><img src="/assets/x.svg" class="icon-img sm dark-icon" /></button>
+        <button class="file-action-btn" title="Download"><img src="/assets/download.svg" class="ic sm ic-gray" /></button>
+        <button class="file-action-btn delete" title="Delete"><img src="/assets/x.svg" class="ic sm ic-gray" /></button>
       `;
               actions
                 .querySelector('[title="Download"]')
@@ -1341,11 +1339,11 @@
           chip.className = "attachment-chip";
           chip.innerHTML = `<img src="${
             item.isFolder ? "/assets/folder.svg" : "/assets/file-diff.svg"
-          }" class="icon-img sm dark-icon" /><span>${item.name}</span>`;
+          }" class="ic sm ic-gray" /><span>${item.name}</span>`;
 
           const removeBtn = document.createElement("button");
           removeBtn.className = "chip-remove";
-          removeBtn.innerHTML = `<img src="/assets/x.svg" class="icon-img sm dark-icon" />`;
+          removeBtn.innerHTML = `<img src="/assets/x.svg" class="ic sm ic-gray" />`;
           removeBtn.addEventListener("click", () => {
             pendingAttachments.splice(index, 1);
             renderAttachments();
@@ -1365,7 +1363,7 @@
           chip.className = "message-attachment-chip";
           chip.innerHTML = `<img src="${
             item.isFolder ? "/assets/folder.svg" : "/assets/file-diff.svg"
-          }" class="icon-img sm dark-icon" /><span>${item.name}</span>`;
+          }" class="ic sm ic-gray" /><span>${item.name}</span>`;
           attachmentsDiv.appendChild(chip);
         });
         msgDiv.appendChild(attachmentsDiv);
@@ -1691,7 +1689,7 @@
           pendingAttachments = [];
           renderAttachments();
           sendBtn.disabled = false;
-          sendBtn.innerHTML = `<img src="/assets/send.svg" class="icon-img sm white-icon" /> Send`;
+          sendBtn.innerHTML = `<img src="/assets/send.svg" class="ic sm ic-white" /> Send`;
           addChatMessage("system", "Attachments processed.", "System");
         }
 
