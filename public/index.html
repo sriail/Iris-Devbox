@@ -1,688 +1,1805 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>BETA: Iris DevBox AI</title>
-<style>
-* {
-  box-sizing: border-box;
-}
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>BETA: Iris Ai</title>
+    <style>
+      :root {
+        /* 3 Shades of White */
+        --w1: #ffffff; /* Pure White - Main panels, inputs */
+        --w2: #e9e9e9; /* Off White - Chat background, secondary buttons */
+        --w3: #e5e7eb; /* Light Gray - Borders, hover states */
 
-body {
-  margin: 0;
-  height: 100vh;
-  display: grid;
-  grid-template-columns: 1fr 420px;
-  background: #fff;
-  color: #1a1a1a;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
-  font-size: 14px;
-  line-height: 1.5;
-}
+        /* 1 Shade of Blue Accent */
+        --accent: #25e69e;
+        --accent-hover: #1bc985;
 
-#screen {
-  background: #000;
-  width: 100%;
-  height: 100%;
-  border-right: 1px solid #e5e5e5;
-}
-
-#sidebar {
-  display: flex;
-  flex-direction: column;
-  background: #fafafa;
-  border-left: 1px solid #e5e5e5;
-  overflow: hidden;
-}
-
-.sidebar-header {
-  padding: 16px;
-  border-bottom: 1px solid #e5e5e5;
-  background: #fff;
-}
-
-.session-badge {
-  display: inline-block;
-  padding: 4px 12px;
-  background: #f0f0f0;
-  border-radius: 4px;
-  font-family: 'Monaco', 'Courier New', monospace;
-  font-size: 12px;
-  color: #666;
-  margin-bottom: 8px;
-}
-
-.session-badge strong {
-  color: #1a1a1a;
-}
-
-.sidebar-label {
-  display: block;
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: #999;
-  margin-bottom: 8px;
-}
-
-#chat {
-  flex: 1;
-  overflow-y: auto;
-  padding: 16px;
-  background: #fafafa;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.chat-message {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.message-label {
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-  color: #999;
-}
-
-.message-content {
-  padding: 10px 12px;
-  border-radius: 4px;
-  background: #fff;
-  border: 1px solid #e5e5e5;
-  word-wrap: break-word;
-  white-space: pre-wrap;
-  font-family: 'Monaco', 'Courier New', monospace;
-  font-size: 13px;
-  color: #333;
-  line-height: 1.4;
-}
-
-.message-content.user {
-  background: #f0f7ff;
-  border-color: #d0e8ff;
-  color: #003d99;
-}
-
-.message-content.llm {
-  background: #fff;
-  border-color: #e5e5e5;
-  color: #1a1a1a;
-}
-
-.message-content.command {
-  background: #f5f5f5;
-  border-left: 3px solid #999;
-  color: #666;
-}
-
-.message-content.output {
-  background: #f9f9f9;
-  border-left: 3px solid #ccc;
-  color: #555;
-  font-size: 12px;
-}
-
-.files-section {
-  margin-top: 16px;
-  padding: 12px;
-  background: #fff;
-  border: 1px solid #e5e5e5;
-  border-radius: 4px;
-}
-
-.files-title {
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-  color: #999;
-  margin-bottom: 8px;
-}
-
-.file-item {
-  padding: 6px 8px;
-  background: #f9f9f9;
-  border-radius: 3px;
-  font-family: 'Monaco', 'Courier New', monospace;
-  font-size: 12px;
-  color: #666;
-  margin-bottom: 4px;
-}
-
-.file-item:last-child {
-  margin-bottom: 0;
-}
-
-#controls {
-  padding: 16px;
-  border-top: 1px solid #e5e5e5;
-  background: #fff;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-#prompt {
-  padding: 10px;
-  border: 1px solid #e5e5e5;
-  border-radius: 4px;
-  background: #fff;
-  color: #1a1a1a;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-size: 13px;
-  resize: vertical;
-  max-height: 100px;
-  min-height: 60px;
-}
-
-#prompt:focus {
-  outline: none;
-  border-color: #0066cc;
-  box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1);
-}
-
-.button-group {
-  display: flex;
-  gap: 8px;
-}
-
-button {
-  flex: 1;
-  padding: 10px 14px;
-  background: #0066cc;
-  color: #fff;
-  border: none;
-  border-radius: 4px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-button:hover {
-  background: #0052a3;
-}
-
-button:active {
-  background: #003d7a;
-}
-
-button:disabled {
-  background: #ccc;
-  color: #999;
-  cursor: not-allowed;
-}
-
-button.secondary {
-  background: #f0f0f0;
-  color: #1a1a1a;
-  border: 1px solid #e5e5e5;
-}
-
-button.secondary:hover {
-  background: #e8e8e8;
-}
-
-#file {
-  display: none;
-}
-
-::-webkit-scrollbar {
-  width: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #ccc;
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #999;
-}
-
-@media (max-width: 1024px) {
-  body {
-    grid-template-columns: 1fr;
-  }
-  
-  #sidebar {
-    position: fixed;
-    right: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 1000;
-  }
-}
-</style>
-</head>
-
-<body>
-
-<div id="screen"></div>
-
-<div id="sidebar">
-  <div class="sidebar-header">
-    <div class="session-badge">Session: <strong id="session">pending</strong></div>
-    <div class="sidebar-label">Chat</div>
-  </div>
-  
-  <div id="chat"></div>
-  
-  <div id="controls">
-    <textarea id="prompt" placeholder="Ask the LLM to do something..."></textarea>
-    <div class="button-group">
-      <button id="send">Send</button>
-      <button class="secondary" onclick="document.getElementById('file').click()">Upload</button>
-    </div>
-    <input type="file" id="file" />
-  </div>
-</div>
-
-<script src="/v86/libv86.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/fzstd@0.1.1/umd/index.js"></script>
-<script>
-// --- Global Application State ---
-let ws = null;
-let emulator = null;
-let sessionId = null;
-let vmBooted = false;
-let vmReady = false;
-let serialBuffer = "";
-let commandQueue = [];
-let isProcessing = false;
-
-// --- DOM Element Selection ---
-const sessionEl = document.getElementById("session");
-const promptEl = document.getElementById("prompt");
-const sendBtn = document.getElementById("send");
-const fileInput = document.getElementById("file");
-const screen = document.getElementById("screen");
-const chatEl = document.getElementById("chat");
-
-// --- UI Display Helpers ---
-function addChatMessage(role, content, label = null) {
-  const msgDiv = document.createElement("div");
-  msgDiv.className = "chat-message";
-  
-  if (label) {
-    const labelEl = document.createElement("div");
-    labelEl.className = "message-label";
-    labelEl.textContent = label;
-    msgDiv.appendChild(labelEl);
-  }
-  
-  const contentDiv = document.createElement("div");
-  contentDiv.className = `message-content ${role}`;
-  contentDiv.textContent = content;
-  msgDiv.appendChild(contentDiv);
-  
-  chatEl.appendChild(msgDiv);
-  chatEl.scrollTop = chatEl.scrollHeight;
-}
-
-function addCommandOutput(cmd) {
-  const msgDiv = document.createElement("div");
-  msgDiv.className = "chat-message";
-  
-  const labelEl = document.createElement("div");
-  labelEl.className = "message-label";
-  labelEl.textContent = `Command: ${cmd.tool || 'Shell'}`;
-  msgDiv.appendChild(labelEl);
-  
-  if (cmd.reasoning) {
-    const reasoningDiv = document.createElement("div");
-    reasoningDiv.className = "message-content command";
-    reasoningDiv.textContent = `💭 ${cmd.reasoning}`;
-    msgDiv.appendChild(reasoningDiv);
-  }
-  
-  if (cmd.command) {
-    const cmdDiv = document.createElement("div");
-    cmdDiv.className = "message-content command";
-    cmdDiv.textContent = `$ ${cmd.command}`;
-    msgDiv.appendChild(cmdDiv);
-  }
-  
-  chatEl.appendChild(msgDiv);
-  chatEl.scrollTop = chatEl.scrollHeight;
-}
-
-function addCommandResult(cmd, output) {
-  const msgDiv = document.createElement("div");
-  msgDiv.className = "chat-message";
-  
-  const outputDiv = document.createElement("div");
-  outputDiv.className = "message-content output";
-  outputDiv.textContent = output;
-  msgDiv.appendChild(outputDiv);
-  
-  chatEl.appendChild(msgDiv);
-  chatEl.scrollTop = chatEl.scrollHeight;
-}
-
-function addFilesExport(files) {
-  const msgDiv = document.createElement("div");
-  msgDiv.className = "chat-message";
-  
-  const filesSection = document.createElement("div");
-  filesSection.className = "files-section";
-  
-  const titleEl = document.createElement("div");
-  titleEl.className = "files-title";
-  titleEl.textContent = "Exported Files";
-  filesSection.appendChild(titleEl);
-  
-  if (files && files.length > 0) {
-    files.forEach(file => {
-      const fileItem = document.createElement("div");
-      fileItem.className = "file-item";
-      fileItem.textContent = file;
-      filesSection.appendChild(fileItem);
-    });
-  } else {
-    const emptyItem = document.createElement("div");
-    emptyItem.className = "file-item";
-    emptyItem.textContent = "No files generated";
-    filesSection.appendChild(emptyItem);
-  }
-  
-  msgDiv.appendChild(filesSection);
-  chatEl.appendChild(msgDiv);
-  chatEl.scrollTop = chatEl.scrollHeight;
-}
-
-// --- Adaptive V86 Emulator Engine Initialization ---
-// --- Finalized Option A V86 Emulator Engine Initialization ---
-// --- Finalized Blob-Stream V86 Emulator Engine Initialization ---
-async function initV86Emulator(customDiskPath = null) {
-  let StarterConstructor = window.V86;
-
-  if (!StarterConstructor) {
-    if (typeof window.V86Starter === "function") {
-      StarterConstructor = window.V86Starter;
-    } else if (typeof V86Starter !== "undefined") {
-      StarterConstructor = V86Starter;
-    }
-  }
-
-  if (!StarterConstructor) {
-    addChatMessage("system", "❌ V86 Engine binding missing.", "System");
-    return;
-  }
-
-  if (emulator) {
-    try { emulator.destroy(); } catch(e) {}
-  }
-
-  try {
-    const config = {
-      wasm_path: "/v86/v86.wasm",
-      memory_size: 512 * 1024 * 1024,
-      vga_memory_size: 16 * 1024 * 1024,
-      screen_container: screen,
-      bios: { url: "/v86/seabios.bin" },
-      vga_bios: { url: "/v86/vgabios.bin" },
-      autostart: true,
-      disable_audio: true, 
-      serial_containers: document.getElementById("serial") ? ["#serial"] : undefined
-    };
-
-    if (customDiskPath) {
-      config.cdrom = { url: customDiskPath };
-    } else {
-      addChatMessage("system", "⏳ Downloading and unpacking compressed system disk...", "System");
-      
-      // 1. Fetch the 50MB compressed asset from your worker proxy
-      const response = await fetch("/api/proxy-vm-image");
-      if (!response.ok) throw new Error("Failed to pull system image from backend proxy.");
-      
-      const compressedData = await response.arrayBuffer();
-
-      if (typeof fzstd === "undefined") {
-        throw new Error("Decompression engine (fzstd) missing from window environment scope.");
+        /* Functional Colors */
+        --text-primary: #111827;
+        --text-secondary: #6b7280;
+        --danger: #ef4444;
+        --success: #10b981;
       }
 
-      // 2. Unpack the compressed bytes into raw disk bytes
-      const decompressedBytes = fzstd.decompress(new Uint8Array(compressedData));
-
-      // 3. Turn the raw uncompressed bytes into a local streaming browser Blob
-      // This bypasses the continuous 32-bit array allocation crashes!
-      const diskBlob = new Blob([decompressedBytes], { type: "application/octet-stream" });
-      const localBlobUrl = URL.createObjectURL(diskBlob);
-
-      // 4. Bind the streaming Blob URL directly to your Hard Drive configuration slot
-      config.hda = {
-        url: localBlobUrl,
-        async: false // Bypasses network range verification since it's hosted locally inside the tab
-      };
-
-      addChatMessage("system", "🚀 Booting virtual hardware environment...", "System");
-    }
-
-    emulator = new StarterConstructor(config);
-    vmBooted = true;
-    
-    if (sessionId && sessionEl) {
-      sessionEl.textContent = sessionId.slice(0, 8);
-    }
-
-    monitorSerialPort();
-
-  } catch (error) {
-    console.error("Critical failure during startVM layout runtime:", error);
-    addChatMessage("system", `💥 StartVM Failure: ${error.message}`, "System");
-  }
-}
-
-function monitorSerialPort() {
-  if (!emulator) return;
-  
-  emulator.add_listener("serial0-output-char", (char) => {
-    serialBuffer += char;
-    
-    if (serialBuffer.includes("#") || serialBuffer.includes("$")) {
-      vmReady = true;
-      if (vmBooted && serialBuffer.length > 2) {
-        addChatMessage("system", "✓ VM ready - ttyS0 responding", "System");
-        vmBooted = false; 
+      * {
+        box-sizing: border-box;
       }
-    }
-  });
-}
 
-async function executeCommand(cmd) {
-  if (!emulator) return "";
-  
-  emulator.serial0_send(cmd + "\n");
-  
-  return new Promise((resolve) => {
-    let output = "";
-    let timeout = setTimeout(() => {
-      resolve(output);
-    }, 2000);
-    
-    const listener = (char) => {
-      output += char;
-      clearTimeout(timeout);
-      timeout = setTimeout(() => {
-        emulator.remove_listener("serial0-output-char", listener);
-        resolve(output);
-      }, 1000);
-    };
-    
-    emulator.add_listener("serial0-output-char", listener);
-  });
-}
+      body {
+        margin: 0;
+        height: 100vh;
+        display: grid;
+        grid-template-columns: 1fr 6px 400px; /* 6px for resizer */
+        background: var(--w2);
+        color: var(--text-primary);
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+        font-size: 14px;
+        line-height: 1.5;
+        overflow: hidden;
+      }
 
-async function processQueueItem(item) {
-  isProcessing = true;
-  
-  try {
-    addCommandOutput(item.cmd);
-    
-    if (item.cmd.command) {
-      const output = await executeCommand(item.cmd.command);
-      addCommandResult(item.cmd, output);
-      serialBuffer = output;
-    }
-    
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({
-        type: "llm_query",
-        payload: {
-          prompt: `VM Output:\n${serialBuffer}\n\nWhat should I do next?`,
-          vmOutput: serialBuffer
+      /* Resizer Bar */
+      #resizer {
+        background: var(--w3);
+        cursor: col-resize;
+        user-select: none;
+        transition: background 0.2s;
+        z-index: 100;
+      }
+      #resizer:hover,
+      #resizer.dragging {
+        background: var(--accent);
+      }
+
+      /* Main View & Navbar */
+      #main-view {
+        display: flex;
+        flex-direction: column;
+        background: #000;
+        border-right: 1px solid var(--w3);
+        overflow: hidden;
+      }
+
+      #view-header,
+      .sidebar-header {
+        display: flex;
+        background: var(--w1);
+        border-bottom: 1px solid var(--w3);
+        padding: 12px 16px;
+        gap: 12px;
+        flex: none;
+        z-index: 10;
+        align-items: center;
+        height: 57px; /* Explicit matching height */
+      }
+
+      .tab-btn {
+        flex: 1;
+        padding: 8px 16px;
+        background: var(--w2);
+        color: var(--text-secondary);
+        border: 1px solid transparent;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      }
+
+      .tab-btn:hover {
+        background: var(--w3);
+        color: var(--text-primary);
+      }
+
+      .tab-btn.active {
+        background: var(--accent);
+        color: var(--w1);
+        border-color: var(--accent);
+      }
+
+      /* Fixed View Content Logic */
+      .view-content {
+        flex: 1;
+        display: none;
+        overflow: hidden;
+        position: relative;
+      }
+
+      .view-content.active {
+        display: flex;
+        flex-direction: column;
+      }
+
+      #screen {
+        width: 100%;
+        height: 100%;
+        flex: 1;
+      }
+
+      /* Workspace View & File Tree */
+      #workspace-container {
+        background: var(--w2);
+        overflow-y: auto;
+        height: 100%;
+        padding: 24px;
+        gap: 16px;
+      }
+
+      #workspace-toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--w3);
+      }
+
+      #workspace-toolbar h3 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      #workspace-empty {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        color: var(--text-secondary);
+        text-align: center;
+      }
+
+      .empty-icon {
+        font-size: 48px;
+        margin-bottom: 16px;
+        opacity: 0.5;
+      }
+
+      .file-tree {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .tree-item {
+        display: flex;
+        flex-direction: column;
+      }
+      .tree-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 8px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+        color: var(--text-primary);
+        transition: background 0.2s;
+        user-select: none;
+      }
+
+      .tree-header:hover {
+        background: var(--w3);
+      }
+      .tree-header .chevron {
+        font-size: 10px;
+        color: var(--text-secondary);
+        transition: transform 0.2s;
+        width: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .tree-header.expanded .chevron {
+        transform: rotate(90deg);
+      }
+
+      .file-actions {
+        display: flex;
+        gap: 4px;
+        opacity: 0;
+        transition: opacity 0.2s;
+      }
+      .tree-header:hover .file-actions {
+        opacity: 1;
+      }
+
+      .file-action-btn {
+        background: transparent;
+        border: none;
+        color: var(--text-secondary);
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 4px;
+        font-size: 14px;
+        flex: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .file-action-btn:hover {
+        background: rgba(0, 0, 0, 0.1);
+        color: var(--text-primary);
+      }
+      .file-action-btn.delete:hover {
+        color: var(--danger);
+      }
+
+      .tree-children {
+        margin-left: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        overflow: hidden;
+        max-height: 0;
+        transition: max-height 0.3s ease-in-out;
+      }
+      .tree-children.expanded {
+        max-height: 10000px;
+      }
+
+      .file-editor {
+        margin: 8px 0 8px 28px;
+        background: #1e1e1e;
+        border-radius: 8px;
+        border: 1px solid #374151;
+        overflow: hidden;
+        display: none;
+      }
+      .file-editor.active {
+        display: block;
+      }
+
+      .editor-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 12px;
+        background: #111827;
+        color: #9ca3af;
+        font-family: "SF Mono", Monaco, monospace;
+        font-size: 12px;
+        border-bottom: 1px solid #374151;
+      }
+
+      .save-btn {
+        padding: 4px 12px;
+        background: var(--success);
+        color: var(--w1);
+        border: none;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        flex: none;
+      }
+      .save-btn:hover {
+        filter: brightness(1.1);
+      }
+
+      .editor-textarea {
+        width: 100%;
+        min-height: 200px;
+        padding: 12px;
+        background: #1e1e1e;
+        color: #d4d4d4;
+        border: none;
+        outline: none;
+        resize: vertical;
+        font-family: "SF Mono", Monaco, monospace;
+        font-size: 13px;
+        line-height: 1.5;
+      }
+
+      /* Sidebar & Chat */
+      #sidebar {
+        display: flex;
+        flex-direction: column;
+        background: var(--w1);
+        border-left: 1px solid var(--w3);
+        overflow: hidden;
+        min-width: 300px; /* Prevent shrinking too much */
+      }
+
+      .sidebar-header {
+        justify-content: space-between;
+      }
+
+      .session-badge {
+        padding: 8px 12px;
+        background: var(--w2);
+        border-radius: 8px;
+        font-family: "SF Mono", Monaco, monospace;
+        font-size: 12px;
+        color: var(--text-secondary);
+        flex: 1;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .session-badge strong {
+        color: var(--text-primary);
+      }
+
+      .mini-btn {
+        padding: 8px 16px;
+        background: var(--w2);
+        color: var(--text-secondary);
+        border: 1px solid transparent;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        flex: none;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .mini-btn:hover {
+        background: var(--w3);
+        color: var(--text-primary);
+      }
+
+      #chat {
+        flex: 1;
+        overflow-y: auto;
+        padding: 24px 16px;
+        background: var(--w2);
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .chat-message {
+        display: flex;
+        flex-direction: column;
+        max-width: 85%;
+        animation: slideIn 0.3s ease-out;
+      }
+
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
         }
-      }));
-    }
-  } catch (e) {
-    console.error("Queue processing error:", e);
-  } finally {
-    isProcessing = false;
-    if (commandQueue.length > 0) {
-      setTimeout(() => processQueueItem(commandQueue.shift()), 500);
-    }
-  }
-}
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
 
-// --- Network Layer & WebSocket Event Loop ---
-function connect() {
-  const protocol = location.protocol === "https:" ? "wss:" : "ws:";
-  ws = new WebSocket(`${protocol}//${location.host}/ws`);
+      .chat-message.user {
+        align-self: flex-end;
+        align-items: flex-end;
+      }
+      .chat-message.llm {
+        align-self: flex-start;
+        align-items: flex-start;
+      }
+      .chat-message.system {
+        align-self: center;
+        max-width: 90%;
+        align-items: center;
+      }
 
-  ws.addEventListener("message", event => {
-    const msg = JSON.parse(event.data);
+      .message-label {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        margin: 0 8px 4px;
+        text-transform: capitalize;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
 
-    switch (msg.type) {
-      case "session_created":
-        sessionId = msg.sessionId;
-        if (sessionEl) sessionEl.textContent = sessionId.slice(0, 8);
-        addChatMessage("system", "VM session started", "System");
-        initV86Emulator();
-        break;
+      .message-content {
+        padding: 12px 16px;
+        border-radius: 16px;
+        word-wrap: break-word;
+        font-size: 14px;
+        line-height: 1.5;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+      }
 
-      case "boot_confirm":
-        vmBooted = true;
-        addChatMessage("system", "VM booting...", "System");
-        break;
+      .chat-message.user .message-content {
+        background: var(--accent);
+        color: var(--w1);
+        border-bottom-right-radius: 4px;
+      }
 
-      case "llm_response":
-        addChatMessage("llm", msg.response, "Assistant");
-        if (msg.commands && msg.commands.length > 0) {
-          msg.commands.forEach(cmd => {
-            if (!isProcessing) {
-              commandQueue.push({ cmd });
-              processQueueItem(commandQueue.shift());
+      .chat-message.llm .message-content {
+        background: var(--w1);
+        color: var(--text-primary);
+        border: 1px solid var(--w3);
+        border-bottom-left-radius: 4px;
+      }
+
+      /* Markdown Styling */
+      .message-content.markdown > *:first-child {
+        margin-top: 0;
+      }
+      .message-content.markdown > *:last-child {
+        margin-bottom: 0;
+      }
+      .message-content.markdown p {
+        margin: 0 0 8px;
+      }
+      .message-content.markdown h1,
+      .message-content.markdown h2,
+      .message-content.markdown h3 {
+        margin: 12px 0 8px;
+        font-weight: 600;
+      }
+      .message-content.markdown h1 {
+        font-size: 1.4em;
+      }
+      .message-content.markdown h2 {
+        font-size: 1.2em;
+      }
+      .message-content.markdown h3 {
+        font-size: 1.1em;
+      }
+      .message-content.markdown ul,
+      .message-content.markdown ol {
+        margin: 0 0 8px;
+        padding-left: 20px;
+      }
+      .message-content.markdown li {
+        margin: 4px 0;
+      }
+      .message-content.markdown code {
+        background: var(--w3);
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-family: "SF Mono", Monaco, monospace;
+        font-size: 0.9em;
+      }
+      .message-content.markdown pre {
+        background: #1e1e1e;
+        color: #d4d4d4;
+        padding: 12px;
+        border-radius: 8px;
+        overflow-x: auto;
+        margin: 0 0 8px;
+      }
+      .message-content.markdown pre code {
+        background: transparent;
+        padding: 0;
+        font-size: 13px;
+      }
+      .message-content.markdown a {
+        color: var(--accent);
+        text-decoration: underline;
+      }
+
+      .chat-message.system .message-content {
+        background: transparent;
+        color: var(--text-secondary);
+        font-size: 12px;
+        font-weight: 500;
+        padding: 4px 0;
+        box-shadow: none;
+        text-align: center;
+      }
+
+      .chat-message.system.error .message-content {
+        color: var(--danger);
+        background: #fef2f2;
+        padding: 8px 12px;
+        border-radius: 8px;
+        border: 1px solid #fee2e2;
+      }
+
+      .message-attachments {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 6px;
+        padding: 0 4px;
+      }
+
+      .chat-message.user .message-attachments {
+        justify-content: flex-end;
+      }
+
+      .message-attachment-chip {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: 16px;
+        font-size: 11px;
+        font-weight: 600;
+      }
+
+      .chat-message.user .message-attachment-chip {
+        background: var(--w1);
+        border: 1px solid var(--w3);
+        color: var(--text-primary);
+      }
+
+      .chat-message.llm .message-attachment-chip {
+        background: var(--w2);
+        border: 1px solid var(--w3);
+        color: var(--text-primary);
+      }
+
+      /* Message Actions (Copy/Regenerate) */
+      .message-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 6px;
+        padding: 0 4px;
+      }
+
+      .action-btn {
+        background: transparent;
+        border: none;
+        color: var(--text-secondary);
+        font-size: 11px;
+        font-weight: 600;
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 4px;
+        transition: all 0.2s;
+        flex: none;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .action-btn:hover {
+        background: rgba(0, 0, 0, 0.05);
+        color: var(--accent);
+      }
+
+      /* Controls */
+      #controls {
+        padding: 16px;
+        border-top: 1px solid var(--w3);
+        background: var(--w1);
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        flex: none;
+      }
+
+      #attachments-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .attachment-chip {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 8px 6px 12px;
+        background: var(--w2);
+        border: 1px solid var(--w3);
+        border-radius: 20px;
+        font-size: 12px;
+        color: var(--text-primary);
+        font-weight: 500;
+      }
+
+      .chip-remove {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 16px;
+        height: 16px;
+        background: var(--w3);
+        border: none;
+        border-radius: 50%;
+        cursor: pointer;
+        transition: all 0.2s;
+        padding: 0;
+        flex: none;
+      }
+
+      .chip-remove:hover {
+        background: var(--danger);
+      }
+
+      #prompt {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid var(--w3);
+        border-radius: 12px;
+        background: var(--w2);
+        color: var(--text-primary);
+        font-family: inherit;
+        font-size: 14px;
+        resize: none;
+        max-height: 120px;
+        min-height: 44px;
+        transition: all 0.2s;
+      }
+
+      #prompt:focus {
+        outline: none;
+        border-color: var(--accent);
+        background: var(--w1);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+      }
+
+      .button-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap; /* Prevents toggles from disappearing on shrink */
+      }
+
+      button {
+        padding: 10px 16px;
+        background: var(--accent);
+        color: var(--w1);
+        border: none;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+      }
+      button:hover {
+        background: var(--accent-hover);
+        transform: translateY(-1px);
+      }
+      button:active {
+        transform: translateY(0);
+      }
+      button:disabled {
+        background: #9ca3af;
+        cursor: not-allowed;
+        transform: none;
+      }
+      button.secondary {
+        background: var(--w2);
+        color: var(--text-primary);
+        border: 1px solid var(--w3);
+        flex: none;
+      }
+      button.secondary:hover {
+        background: var(--w3);
+      }
+
+      .toggle-label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        cursor: pointer;
+        white-space: nowrap;
+        padding: 0 4px;
+        flex: none;
+      }
+
+      .toggle-label input {
+        display: none;
+      }
+
+      .toggle-switch {
+        position: relative;
+        width: 32px;
+        height: 18px;
+        background: var(--w3);
+        border-radius: 9px;
+        transition: background 0.2s;
+      }
+
+      .toggle-switch::after {
+        content: "";
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 14px;
+        height: 14px;
+        background: var(--w1);
+        border-radius: 50%;
+        transition: transform 0.2s;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+      }
+
+      .toggle-label input:checked + .toggle-switch {
+        background: var(--accent);
+      }
+      .toggle-label input:checked + .toggle-switch::after {
+        transform: translateX(14px);
+      }
+
+      #file,
+      #file-folder {
+        display: none;
+      }
+
+      /* SVG Icon Utilities */
+      .icon-img {
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+      }
+      .icon-img.sm {
+        width: 12px;
+        height: 12px;
+      }
+      .icon-img.lg {
+        width: 48px;
+        height: 48px;
+        margin-bottom: 16px;
+        opacity: 0.3;
+      }
+      .dark-icon {
+        filter: brightness(0) saturate(100%);
+        opacity: 0.6;
+      }
+      .white-icon {
+        filter: brightness(0) invert(1);
+      }
+      .gray-icon {
+        filter: brightness(0) saturate(100%);
+        opacity: 0.4;
+      }
+      .tab-btn.active .dark-icon,
+      button:hover .dark-icon {
+        opacity: 1;
+        filter: none;
+      }
+      button.secondary .dark-icon {
+        opacity: 0.8;
+      }
+
+      /* Custom Scrollbar Styling */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--w3);
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #d1d5db;
+      }
+
+      #chat::-webkit-scrollbar-thumb {
+        background: #d1d5db;
+        border-radius: 4px;
+      }
+      #workspace-container::-webkit-scrollbar-thumb {
+        background: #d1d5db;
+        border-radius: 4px;
+      }
+
+      @media (max-width: 1024px) {
+        body {
+          grid-template-columns: 1fr;
+        }
+        #resizer {
+          display: none;
+        }
+        #sidebar {
+          position: fixed;
+          right: 0;
+          top: 0;
+          width: 100%;
+          height: 100%;
+          z-index: 1000;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="main-view">
+      <div id="view-header">
+        <button class="tab-btn active" data-view="devbox">
+          <img src="/assets/server-2.svg" class="icon-img sm dark-icon" />
+          Devbox
+        </button>
+        <button class="tab-btn" data-view="workspace">
+          <img src="/assets/folder.svg" class="icon-img sm dark-icon" />
+          Workspace
+        </button>
+      </div>
+
+      <div id="devbox-container" class="view-content active">
+        <div id="screen"></div>
+      </div>
+
+      <div id="workspace-container" class="view-content">
+        <div id="workspace-toolbar" style="display: none">
+          <h3>
+            <img src="/assets/folder.svg" class="icon-img dark-icon" />
+            Workspace Files
+          </h3>
+          <button class="mini-btn" id="download-zip-btn">
+            <img src="/assets/download.svg" class="icon-img sm dark-icon" />
+            Download .zip
+          </button>
+        </div>
+        <div id="workspace-empty">
+          <img src="/assets/folder.svg" class="icon-img lg" />
+          <div style="font-weight: 600; margin-bottom: 4px">
+            No files in workspace
+          </div>
+          <div style="font-size: 13px">
+            Files generated by the LLM will appear here.
+          </div>
+        </div>
+        <div class="file-tree" id="workspace-tree"></div>
+      </div>
+    </div>
+
+    <div id="resizer"></div>
+
+    <div id="sidebar">
+      <div class="sidebar-header">
+        <div class="session-badge">
+          <img src="/assets/server-2.svg" class="icon-img sm dark-icon" />
+          Session: <strong id="session">pending</strong>
+        </div>
+        <button class="mini-btn" id="clear-chat-btn">
+          <img src="/assets/plus.svg" class="icon-img sm dark-icon" />
+          Clear
+        </button>
+      </div>
+
+      <div id="chat"></div>
+
+      <div id="controls">
+        <div id="attachments-container"></div>
+        <textarea
+          id="prompt"
+          placeholder="Ask the LLM to do something..."
+          rows="1"
+        ></textarea>
+        <div class="button-group">
+          <button id="send">
+            <img src="/assets/send.svg" class="icon-img sm white-icon" />
+            Send
+          </button>
+          <button class="secondary" id="upload-file-btn">
+            <img src="/assets/file-diff.svg" class="icon-img sm dark-icon" />
+            File
+          </button>
+          <button class="secondary" id="upload-folder-btn">
+            <img src="/assets/folder.svg" class="icon-img sm dark-icon" />
+            Folder
+          </button>
+          <label class="toggle-label">
+            <input type="checkbox" id="thinking-toggle" />
+            <span class="toggle-switch"></span>
+            <img src="/assets/brain.svg" class="icon-img sm dark-icon" />
+            Think
+          </label>
+          <label class="toggle-label">
+            <input type="checkbox" id="quiet-toggle" checked />
+            <span class="toggle-switch"></span>
+            Quiet
+          </label>
+        </div>
+        <input type="file" id="file" multiple />
+        <input
+          type="file"
+          id="file-folder"
+          webkitdirectory
+          directory
+          multiple
+        />
+      </div>
+    </div>
+
+    <!-- Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+    <script src="/v86/libv86.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fzstd@0.1.1/umd/index.js"></script>
+    <script>
+      // --- Global Application State ---
+      let ws = null;
+      let emulator = null;
+      let sessionId = null;
+      let vmBooted = false;
+      let vmReady = false;
+      let serialBuffer = "";
+      let commandQueue = [];
+      let isProcessing = false;
+      let pendingAttachments = [];
+      let thinkingModeEnabled = false;
+      let quietModeEnabled = true; // Default to true
+      let workspaceFiles = [];
+
+      const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+      const MAX_FOLDER_SIZE = 300 * 1024 * 1024; // 300MB
+
+      // --- DOM Element Selection ---
+      const sessionEl = document.getElementById("session");
+      const promptEl = document.getElementById("prompt");
+      const sendBtn = document.getElementById("send");
+      const fileInput = document.getElementById("file");
+      const folderInput = document.getElementById("file-folder");
+      const screen = document.getElementById("screen");
+      const chatEl = document.getElementById("chat");
+      const attachmentsContainer = document.getElementById(
+        "attachments-container"
+      );
+      const thinkingToggle = document.getElementById("thinking-toggle");
+      const quietToggle = document.getElementById("quiet-toggle");
+      const uploadFileBtn = document.getElementById("upload-file-btn");
+      const uploadFolderBtn = document.getElementById("upload-folder-btn");
+      const clearChatBtn = document.getElementById("clear-chat-btn");
+
+      // --- UI Display Helpers ---
+      function addChatMessage(role, content, label = null, isError = false) {
+        // Quiet Mode Logic: Hide ONLY non-essential system messages. Keep User, LLM, and Errors.
+        if (quietModeEnabled && role === "system" && !isError) return null;
+
+        const msgDiv = document.createElement("div");
+        msgDiv.className = `chat-message ${role}`;
+        if (isError) msgDiv.classList.add("error");
+
+        if (label) {
+          const labelEl = document.createElement("div");
+          labelEl.className = "message-label";
+          labelEl.innerHTML = label;
+          msgDiv.appendChild(labelEl);
+        }
+
+        const contentDiv = document.createElement("div");
+        contentDiv.className = "message-content";
+
+        if (role === "llm" && typeof marked !== "undefined") {
+          contentDiv.innerHTML = marked.parse(content);
+          contentDiv.classList.add("markdown");
+        } else {
+          contentDiv.textContent = content;
+        }
+
+        msgDiv.appendChild(contentDiv);
+        chatEl.appendChild(msgDiv);
+        chatEl.scrollTop = chatEl.scrollHeight;
+
+        // Add Copy & Regenerate buttons to User messages
+        if (role === "user" && !isError) {
+          const actionsDiv = document.createElement("div");
+          actionsDiv.className = "message-actions";
+
+          const copyBtn = document.createElement("button");
+          copyBtn.className = "action-btn";
+          copyBtn.innerHTML = `<img src="/assets/clipboard.svg" class="icon-img sm dark-icon" /> Copy`;
+          copyBtn.addEventListener("click", () => {
+            navigator.clipboard.writeText(content);
+            copyBtn.innerHTML = `<img src="/assets/clipboard-check.svg" class="icon-img sm dark-icon" /> Copied!`;
+            setTimeout(
+              () =>
+                (copyBtn.innerHTML = `<img src="/assets/clipboard.svg" class="icon-img sm dark-icon" /> Copy`),
+              1500
+            );
+          });
+
+          const regenBtn = document.createElement("button");
+          regenBtn.className = "action-btn";
+          regenBtn.innerHTML = `<img src="/assets/refresh.svg" class="icon-img sm dark-icon" /> Regenerate`;
+          regenBtn.addEventListener("click", () => {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+              ws.send(
+                JSON.stringify({
+                  type: "user_prompt",
+                  payload: {
+                    prompt: content,
+                    attachments: [],
+                    thinking: thinkingModeEnabled,
+                    regenerate: true,
+                  },
+                })
+              );
+              addChatMessage("system", "Regenerating response...", "System");
             } else {
-              commandQueue.push({ cmd });
+              addChatMessage(
+                "system",
+                "Cannot regenerate: Server connection down.",
+                "System",
+                true
+              );
             }
           });
+
+          actionsDiv.appendChild(copyBtn);
+          actionsDiv.appendChild(regenBtn);
+          msgDiv.appendChild(actionsDiv);
         }
-        break;
 
-      case "command_executed":
-        addCommandResult(msg.command, msg.output);
-        break;
-
-      case "file_added":
-        break;
-
-      case "files_exported":
-        addFilesExport(msg.files);
-        break;
-
-      case "file_list":
-        if (msg.files.length > 0) {
-          addChatMessage("system", "Files: " + msg.files.join(", "), "System");
-        }
-        break;
-    }
-  });
-
-  ws.addEventListener("close", () => {
-    console.warn("WebSocket disconnected. Reconnecting in 3s...");
-    setTimeout(connect, 3000);
-  });
-}
-
-// --- Client Input Handlers & Interactivity ---
-function handleSendPrompt() {
-  if (!promptEl) return;
-  const promptText = promptEl.value.trim();
-  if (!promptText) return;
-
-  addChatMessage("user", promptText, "You");
-  promptEl.value = "";
-
-  if (ws && ws.readyState === WebSocket.OPEN) {
-    ws.send(JSON.stringify({
-      type: "user_prompt",
-      payload: { prompt: promptText }
-    }));
-  } else {
-    addChatMessage("system", "Unable to forward message. Server connection down.", "System");
-  }
-}
-
-if (sendBtn) {
-  sendBtn.addEventListener("click", handleSendPrompt);
-}
-if (promptEl) {
-  promptEl.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") handleSendPrompt();
-  });
-}
-
-if (fileInput) {
-  fileInput.addEventListener("change", async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    addChatMessage("user", `Uploading file: ${file.name}...`);
-
-    const formData = new FormData();
-    formData.append("file", file);
-
-    try {
-      const response = await fetch(`/upload?sid=${sessionId}`, {
-        method: "POST",
-        body: formData 
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Server returned ${response.status}: ${errorText}`);
+        return msgDiv;
       }
 
-      const result = await response.json();
-      addChatMessage("llm", "File uploaded successfully. Initializing target disk environment...");
-      
-      initV86Emulator(result.filePath || null);
+      function addCommandOutput(cmd) {
+        if (quietModeEnabled) return;
+        const msgDiv = document.createElement("div");
+        msgDiv.className = "chat-message llm";
+        msgDiv.innerHTML = `<div class="message-label"><img src="/assets/terminal-2.svg" class="icon-img sm dark-icon" /> Command: ${
+          cmd.tool || "Shell"
+        }</div>`;
 
-    } catch (err) {
-      console.error("Upload failure pipeline executed:", err);
-      addChatMessage("llm", `Error uploading asset: ${err.message}`);
-    }
-  });
-}
+        if (cmd.reasoning) {
+          const reasoningDiv = document.createElement("div");
+          reasoningDiv.className = "cmd-block";
+          reasoningDiv.style.display = "flex";
+          reasoningDiv.style.alignItems = "flex-start";
+          reasoningDiv.style.gap = "8px";
+          reasoningDiv.innerHTML = `<img src="/assets/brain.svg" class="icon-img sm dark-icon" style="margin-top: 2px; flex-shrink: 0;" /><span>${cmd.reasoning}</span>`;
+          msgDiv.appendChild(reasoningDiv);
+        }
+        if (cmd.command) {
+          const cmdDiv = document.createElement("div");
+          cmdDiv.className = "cmd-block";
+          cmdDiv.textContent = `$ ${cmd.command}`;
+          msgDiv.appendChild(cmdDiv);
+        }
+        chatEl.appendChild(msgDiv);
+        chatEl.scrollTop = chatEl.scrollHeight;
+      }
 
-// --- Kickstart Pipelines ---
-document.addEventListener("DOMContentLoaded", () => {
-  connect();
-});
-</script>
-    
-</body>
+      function addCommandResult(cmd, output) {
+        if (quietModeEnabled) return;
+        const msgDiv = document.createElement("div");
+        msgDiv.className = "chat-message llm";
+        msgDiv.innerHTML = `<div class="message-label">Output</div>`;
+        const outputDiv = document.createElement("div");
+        outputDiv.className = "cmd-block output";
+        outputDiv.textContent = output;
+        msgDiv.appendChild(outputDiv);
+        chatEl.appendChild(msgDiv);
+        chatEl.scrollTop = chatEl.scrollHeight;
+      }
+
+      // --- Workspace File Tree & Editor ---
+      function buildTree(paths) {
+        const root = {};
+        paths.forEach((path) => {
+          const parts = path.split("/");
+          let curr = root;
+          parts.forEach((part, i) => {
+            if (!curr[part]) curr[part] = i === parts.length - 1 ? null : {};
+            if (curr[part] !== null) curr = curr[part];
+          });
+        });
+        return root;
+      }
+
+      function renderTree(treeObj, container, currentPath = "") {
+        container.innerHTML = "";
+        Object.keys(treeObj)
+          .sort()
+          .forEach((key) => {
+            const val = treeObj[key];
+            const isFile = val === null;
+            const fullPath = currentPath ? `${currentPath}/${key}` : key;
+
+            const item = document.createElement("div");
+            item.className = "tree-item";
+
+            const header = document.createElement("div");
+            header.className = "tree-header";
+            header.innerHTML = `
+      <span class="chevron">${isFile ? "" : "▶"}</span>
+      <img src="${
+        isFile ? "/assets/file-diff.svg" : "/assets/folder.svg"
+      }" class="icon-img sm dark-icon" />
+      <span class="name">${key}</span>
+    `;
+
+            if (isFile) {
+              const actions = document.createElement("div");
+              actions.className = "file-actions";
+              actions.innerHTML = `
+        <button class="file-action-btn" title="Download"><img src="/assets/download.svg" class="icon-img sm dark-icon" /></button>
+        <button class="file-action-btn delete" title="Delete"><img src="/assets/x.svg" class="icon-img sm dark-icon" /></button>
+      `;
+              actions
+                .querySelector('[title="Download"]')
+                .addEventListener("click", (e) => {
+                  e.stopPropagation();
+                  downloadFile(fullPath);
+                });
+              actions
+                .querySelector('[title="Delete"]')
+                .addEventListener("click", (e) => {
+                  e.stopPropagation();
+                  deleteFile(fullPath);
+                });
+              header.appendChild(actions);
+            }
+            item.appendChild(header);
+
+            if (!isFile) {
+              const children = document.createElement("div");
+              children.className = "tree-children";
+              renderTree(val, children, fullPath);
+              item.appendChild(children);
+
+              header.addEventListener("click", () => {
+                header.classList.toggle("expanded");
+                children.classList.toggle("expanded");
+              });
+            } else {
+              header.addEventListener("click", () =>
+                openEditor(item, fullPath, key)
+              );
+            }
+            container.appendChild(item);
+          });
+      }
+
+      async function openEditor(item, filePath, fileName) {
+        document
+          .querySelectorAll(".file-editor.active")
+          .forEach((el) => el.remove());
+
+        const editorDiv = document.createElement("div");
+        editorDiv.className = "file-editor active";
+        editorDiv.innerHTML = `
+    <div class="editor-header">
+      <span>${fileName}</span>
+      <button class="save-btn">Save</button>
+    </div>
+    <textarea class="editor-textarea" placeholder="Loading..."></textarea>
+  `;
+        item.appendChild(editorDiv);
+
+        const textarea = editorDiv.querySelector("textarea");
+        const saveBtn = editorDiv.querySelector(".save-btn");
+
+        try {
+          const res = await fetch(
+            `/workspace-file?sid=${sessionId}&path=${encodeURIComponent(
+              filePath
+            )}`
+          );
+          if (res.ok) {
+            textarea.value = await res.text();
+          } else {
+            textarea.value = `// Could not load file: ${res.statusText}`;
+          }
+        } catch (e) {
+          textarea.value = `// Error loading file: ${e.message}`;
+        }
+
+        saveBtn.addEventListener("click", async () => {
+          saveBtn.textContent = "Saving...";
+          saveBtn.disabled = true;
+
+          const blob = new Blob([textarea.value], { type: "text/plain" });
+          const file = new File([blob], fileName);
+          const formData = new FormData();
+          formData.append("file", file);
+          formData.append("relativePath", filePath);
+
+          try {
+            const res = await fetch(`/upload?sid=${sessionId}`, {
+              method: "POST",
+              body: formData,
+            });
+            if (res.ok) {
+              saveBtn.textContent = "Saved!";
+              setTimeout(() => {
+                saveBtn.textContent = "Save";
+                saveBtn.disabled = false;
+              }, 1500);
+            } else {
+              throw new Error("Server rejected save");
+            }
+          } catch (e) {
+            addChatMessage(
+              "system",
+              `Error saving ${fileName}: ${e.message}`,
+              "System",
+              true
+            );
+            saveBtn.textContent = "Error";
+            setTimeout(() => {
+              saveBtn.textContent = "Save";
+              saveBtn.disabled = false;
+            }, 1500);
+          }
+        });
+      }
+
+      async function downloadFile(filePath) {
+        try {
+          const res = await fetch(
+            `/workspace-file?sid=${sessionId}&path=${encodeURIComponent(
+              filePath
+            )}`
+          );
+          if (!res.ok) throw new Error("Download failed");
+          const blob = await res.blob();
+          const link = document.createElement("a");
+          link.href = URL.createObjectURL(blob);
+          link.download = filePath.split("/").pop();
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(link.href);
+        } catch (e) {
+          addChatMessage(
+            "system",
+            `Error downloading ${filePath}: ${e.message}`,
+            "System",
+            true
+          );
+        }
+      }
+
+      async function deleteFile(filePath) {
+        try {
+          const res = await fetch(
+            `/delete-file?sid=${sessionId}&path=${encodeURIComponent(
+              filePath
+            )}`,
+            { method: "DELETE" }
+          );
+          if (res.ok) {
+            workspaceFiles = workspaceFiles.filter((f) => f !== filePath);
+            renderWorkspaceFiles(workspaceFiles);
+          } else {
+            throw new Error("Delete failed");
+          }
+        } catch (e) {
+          addChatMessage(
+            "system",
+            `Error deleting ${filePath}: ${e.message}`,
+            "System",
+            true
+          );
+        }
+      }
+
+      async function downloadWorkspaceZip() {
+        if (workspaceFiles.length === 0) return;
+        addChatMessage("system", "Zipping workspace...", "System");
+        try {
+          const zip = new JSZip();
+          for (const path of workspaceFiles) {
+            const res = await fetch(
+              `/workspace-file?sid=${sessionId}&path=${encodeURIComponent(
+                path
+              )}`
+            );
+            if (res.ok) {
+              const blob = await res.blob();
+              zip.file(path, blob);
+            }
+          }
+          const content = await zip.generateAsync({ type: "blob" });
+          const link = document.createElement("a");
+          link.href = URL.createObjectURL(content);
+          link.download = "workspace.zip";
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(link.href);
+        } catch (e) {
+          addChatMessage(
+            "system",
+            `Error zipping workspace: ${e.message}`,
+            "System",
+            true
+          );
+        }
+      }
+
+      function renderWorkspaceFiles(files) {
+        workspaceFiles = files || [];
+        const emptyState = document.getElementById("workspace-empty");
+        const tree = document.getElementById("workspace-tree");
+        const toolbar = document.getElementById("workspace-toolbar");
+
+        if (workspaceFiles.length > 0) {
+          emptyState.style.display = "none";
+          toolbar.style.display = "flex";
+          const treeObj = buildTree(workspaceFiles);
+          renderTree(treeObj, tree);
+          document.querySelector('.tab-btn[data-view="workspace"]').click();
+        } else {
+          emptyState.style.display = "flex";
+          toolbar.style.display = "none";
+          tree.innerHTML = "";
+        }
+      }
+
+      document
+        .getElementById("download-zip-btn")
+        .addEventListener("click", downloadWorkspaceZip);
+
+      function renderAttachments() {
+        attachmentsContainer.innerHTML = "";
+        pendingAttachments.forEach((item, index) => {
+          const chip = document.createElement("div");
+          chip.className = "attachment-chip";
+          chip.innerHTML = `<img src="${
+            item.isFolder ? "/assets/folder.svg" : "/assets/file-diff.svg"
+          }" class="icon-img sm dark-icon" /><span>${item.name}</span>`;
+
+          const removeBtn = document.createElement("button");
+          removeBtn.className = "chip-remove";
+          removeBtn.innerHTML = `<img src="/assets/x.svg" class="icon-img sm dark-icon" />`;
+          removeBtn.addEventListener("click", () => {
+            pendingAttachments.splice(index, 1);
+            renderAttachments();
+          });
+          chip.appendChild(removeBtn);
+          attachmentsContainer.appendChild(chip);
+        });
+      }
+
+      function renderMessageAttachments(msgEl, items) {
+        if (!items || items.length === 0) return;
+        const attachmentsDiv = document.createElement("div");
+        attachmentsDiv.className = "message-attachments";
+
+        items.forEach((item) => {
+          const chip = document.createElement("div");
+          chip.className = "message-attachment-chip";
+          chip.innerHTML = `<img src="${
+            item.isFolder ? "/assets/folder.svg" : "/assets/file-diff.svg"
+          }" class="icon-img sm dark-icon" /><span>${item.name}</span>`;
+          attachmentsDiv.appendChild(chip);
+        });
+        msgDiv.appendChild(attachmentsDiv);
+      }
+
+      // --- Adaptive V86 Emulator Engine Initialization ---
+      async function initV86Emulator(customDiskPath = null) {
+        let StarterConstructor = window.V86 || window.V86Starter;
+        if (!StarterConstructor) {
+          addChatMessage(
+            "system",
+            "V86 Engine binding missing.",
+            "System",
+            true
+          );
+          return;
+        }
+        if (emulator) {
+          try {
+            emulator.destroy();
+          } catch (e) {}
+        }
+
+        try {
+          const config = {
+            wasm_path: "/v86/v86.wasm",
+            memory_size: 512 * 1024 * 1024,
+            vga_memory_size: 16 * 1024 * 1024,
+            screen_container: screen,
+            bios: { url: "/v86/seabios.bin" },
+            vga_bios: { url: "/v86/vgabios.bin" },
+            autostart: true,
+            disable_audio: true,
+          };
+
+          if (customDiskPath) {
+            config.cdrom = { url: customDiskPath };
+          } else {
+            addChatMessage("system", "Downloading VM image...", "System");
+            const response = await fetch("/api/proxy-vm-image");
+            if (!response.ok) throw new Error("Failed to pull system image.");
+            const compressedData = await response.arrayBuffer();
+            if (typeof fzstd === "undefined")
+              throw new Error("Decompression engine missing.");
+            const decompressedBytes = fzstd.decompress(
+              new Uint8Array(compressedData)
+            );
+            const diskBlob = new Blob([decompressedBytes], {
+              type: "application/octet-stream",
+            });
+            const localBlobUrl = URL.createObjectURL(diskBlob);
+            config.hda = { url: localBlobUrl, async: false };
+            addChatMessage("system", "Booting VM...", "System");
+          }
+
+          emulator = new StarterConstructor(config);
+          vmBooted = true;
+          if (sessionId && sessionEl)
+            sessionEl.textContent = sessionId.slice(0, 8);
+          monitorSerialPort();
+        } catch (error) {
+          addChatMessage(
+            "system",
+            `StartVM Failure: ${error.message}`,
+            "System",
+            true
+          );
+        }
+      }
+
+      function monitorSerialPort() {
+        if (!emulator) return;
+        emulator.add_listener("serial0-output-char", (char) => {
+          serialBuffer += char;
+          if (serialBuffer.includes("#") || serialBuffer.includes("$")) {
+            vmReady = true;
+            if (vmBooted && serialBuffer.length > 2) {
+              addChatMessage("system", "VM ready - ttyS0 responding", "System");
+              vmBooted = false;
+            }
+          }
+        });
+      }
+
+      async function executeCommand(cmd) {
+        if (!emulator) return "";
+        emulator.serial0_send(cmd + "\n");
+        return new Promise((resolve) => {
+          let output = "";
+          let timeout = setTimeout(() => resolve(output), 2000);
+          const listener = (char) => {
+            output += char;
+            clearTimeout(timeout);
+            timeout = setTimeout(() => {
+              emulator.remove_listener("serial0-output-char", listener);
+              resolve(output);
+            }, 1000);
+          };
+          emulator.add_listener("serial0-output-char", listener);
+        });
+      }
+
+      async function processQueueItem(item) {
+        isProcessing = true;
+        try {
+          addCommandOutput(item.cmd);
+          if (item.cmd.command) {
+            const output = await executeCommand(item.cmd.command);
+            addCommandResult(item.cmd, output);
+            serialBuffer = output;
+          }
+          if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(
+              JSON.stringify({
+                type: "llm_query",
+                payload: {
+                  prompt: `VM Output:\n${serialBuffer}\n\nWhat should I do next?`,
+                  vmOutput: serialBuffer,
+                },
+              })
+            );
+          }
+        } catch (e) {
+          addChatMessage("system", `Queue Error: ${e.message}`, "System", true);
+        } finally {
+          isProcessing = false;
+          if (commandQueue.length > 0) {
+            setTimeout(() => processQueueItem(commandQueue.shift()), 500);
+          }
+        }
+      }
+
+      // --- Network Layer & WebSocket Event Loop ---
+      function connect() {
+        const protocol = location.protocol === "https:" ? "wss:" : "ws:";
+        ws = new WebSocket(`${protocol}//${location.host}/ws`);
+
+        ws.addEventListener("message", (event) => {
+          const msg = JSON.parse(event.data);
+          switch (msg.type) {
+            case "session_created":
+              sessionId = msg.sessionId;
+              if (sessionEl) sessionEl.textContent = sessionId.slice(0, 8);
+              addChatMessage("system", "Session started", "System");
+              initV86Emulator();
+              break;
+            case "boot_confirm":
+              vmBooted = true;
+              addChatMessage("system", "VM booting...", "System");
+              break;
+            case "llm_response":
+              addChatMessage("llm", msg.response, "Assistant");
+              if (msg.commands && msg.commands.length > 0) {
+                msg.commands.forEach((cmd) => {
+                  if (!isProcessing) {
+                    commandQueue.push({ cmd });
+                    processQueueItem(commandQueue.shift());
+                  } else {
+                    commandQueue.push({ cmd });
+                  }
+                });
+              }
+              break;
+            case "command_executed":
+              addCommandResult(msg.command, msg.output);
+              break;
+            case "files_exported":
+              renderWorkspaceFiles(msg.files);
+              break;
+            case "file_list":
+              if (msg.files.length > 0) renderWorkspaceFiles(msg.files);
+              break;
+          }
+        });
+
+        ws.addEventListener("close", () => {
+          addChatMessage(
+            "system",
+            "Disconnected. Reconnecting...",
+            "System",
+            true
+          );
+          setTimeout(connect, 3000);
+        });
+      }
+
+      // --- Client Input Handlers & Interactivity ---
+      function handleFilesSelected(files, isFolder) {
+        if (isFolder) {
+          const folderMap = {};
+          let totalSize = 0;
+
+          for (const file of files) {
+            totalSize += file.size;
+            const rootFolder = file.webkitRelativePath.split("/")[0];
+            if (!folderMap[rootFolder]) {
+              folderMap[rootFolder] = {
+                name: rootFolder,
+                isFolder: true,
+                files: [],
+                size: 0,
+              };
+            }
+            folderMap[rootFolder].files.push(file);
+            folderMap[rootFolder].size += file.size;
+          }
+
+          if (totalSize > MAX_FOLDER_SIZE) {
+            addChatMessage(
+              "system",
+              `Folder exceeds 300MB limit.`,
+              "System",
+              true
+            );
+            return;
+          }
+
+          for (const folderName in folderMap) {
+            pendingAttachments.push(folderMap[folderName]);
+          }
+        } else {
+          for (const file of files) {
+            if (file.size > MAX_FILE_SIZE) {
+              addChatMessage(
+                "system",
+                `File "${file.name}" exceeds 50MB limit.`,
+                "System",
+                true
+              );
+              continue;
+            }
+            pendingAttachments.push({
+              name: file.name,
+              isFolder: false,
+              files: [file],
+              size: file.size,
+            });
+          }
+        }
+        renderAttachments();
+      }
+
+      fileInput.addEventListener("change", (e) => {
+        handleFilesSelected(Array.from(e.target.files), false);
+        e.target.value = "";
+      });
+      folderInput.addEventListener("change", (e) => {
+        handleFilesSelected(Array.from(e.target.files), true);
+        e.target.value = "";
+      });
+
+      async function handleSendPrompt() {
+        const promptText = promptEl.value.trim();
+        if (!promptText && pendingAttachments.length === 0) return;
+
+        const attachmentsToRender = [...pendingAttachments];
+        if (attachmentsToRender.length > 0) {
+          sendBtn.disabled = true;
+          sendBtn.textContent = "Uploading...";
+        }
+
+        const userMsgEl = addChatMessage(
+          "user",
+          promptText || "(Attachments only)",
+          "You"
+        );
+        if (userMsgEl) renderMessageAttachments(userMsgEl, attachmentsToRender);
+
+        promptEl.value = "";
+        promptEl.style.height = "auto";
+
+        let uploadedFilePaths = [];
+        let bootedFromUpload = false;
+
+        if (attachmentsToRender.length > 0) {
+          addChatMessage(
+            "system",
+            `Processing ${attachmentsToRender.length} attachment(s)...`,
+            "System"
+          );
+
+          for (const item of attachmentsToRender) {
+            for (const file of item.files) {
+              const formData = new FormData();
+              formData.append("file", file);
+              if (item.isFolder) {
+                formData.append("relativePath", file.webkitRelativePath);
+              }
+
+              try {
+                const response = await fetch(`/upload?sid=${sessionId}`, {
+                  method: "POST",
+                  body: formData,
+                });
+                if (!response.ok)
+                  throw new Error(`Server returned ${response.status}`);
+                const result = await response.json();
+                uploadedFilePaths.push(result.filePath || file.name);
+
+                if (
+                  (file.name.endsWith(".iso") || file.name.endsWith(".img")) &&
+                  !bootedFromUpload
+                ) {
+                  addChatMessage(
+                    "system",
+                    `Custom OS image detected. Booting VM...`,
+                    "System"
+                  );
+                  initV86Emulator(result.filePath);
+                  bootedFromUpload = true;
+                }
+              } catch (err) {
+                addChatMessage(
+                  "system",
+                  `Error uploading ${file.name}: ${err.message}`,
+                  "System",
+                  true
+                );
+              }
+            }
+          }
+
+          pendingAttachments = [];
+          renderAttachments();
+          sendBtn.disabled = false;
+          sendBtn.innerHTML = `<img src="/assets/send.svg" class="icon-img sm white-icon" /> Send`;
+          addChatMessage("system", "Attachments processed.", "System");
+        }
+
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(
+            JSON.stringify({
+              type: "user_prompt",
+              payload: {
+                prompt: promptText,
+                attachments: uploadedFilePaths,
+                thinking: thinkingModeEnabled,
+              },
+            })
+          );
+        } else {
+          addChatMessage(
+            "system",
+            "Unable to forward message. Server connection down.",
+            "System",
+            true
+          );
+        }
+      }
+
+      sendBtn.addEventListener("click", handleSendPrompt);
+      promptEl.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          handleSendPrompt();
+        }
+      });
+      promptEl.addEventListener("input", () => {
+        promptEl.style.height = "auto";
+        promptEl.style.height = promptEl.scrollHeight + "px";
+      });
+
+      uploadFileBtn.addEventListener("click", () => fileInput.click());
+      uploadFolderBtn.addEventListener("click", () => folderInput.click());
+
+      thinkingToggle.addEventListener(
+        "change",
+        (e) => (thinkingModeEnabled = e.target.checked)
+      );
+      quietToggle.addEventListener("change", (e) => {
+        quietModeEnabled = e.target.checked;
+        if (quietModeEnabled) {
+          // Hide ONLY non-essential system messages
+          document
+            .querySelectorAll(".chat-message.system:not(.error)")
+            .forEach((el) => (el.style.display = "none"));
+        } else {
+          document
+            .querySelectorAll(".chat-message.system")
+            .forEach((el) => (el.style.display = ""));
+        }
+      });
+
+      clearChatBtn.addEventListener("click", () => {
+        chatEl.innerHTML = "";
+        addChatMessage("system", "Chat history cleared.", "System");
+      });
+
+      document.querySelectorAll(".tab-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          document
+            .querySelectorAll(".tab-btn")
+            .forEach((b) => b.classList.remove("active"));
+          document
+            .querySelectorAll(".view-content")
+            .forEach((c) => c.classList.remove("active"));
+          btn.classList.add("active");
+          document
+            .getElementById(`${btn.dataset.view}-container`)
+            .classList.add("active");
+        });
+      });
+
+      // --- Resizer Logic ---
+      const resizer = document.getElementById("resizer");
+      let isDragging = false;
+
+      resizer.addEventListener("mousedown", (e) => {
+        isDragging = true;
+        resizer.classList.add("dragging");
+        document.body.style.cursor = "col-resize";
+        document.body.style.userSelect = "none";
+      });
+
+      document.addEventListener("mousemove", (e) => {
+        if (!isDragging) return;
+        const newWidth = window.innerWidth - e.clientX;
+        if (newWidth > 300 && newWidth < window.innerWidth - 400) {
+          document.body.style.gridTemplateColumns = `1fr 6px ${newWidth}px`;
+        }
+      });
+
+      document.addEventListener("mouseup", () => {
+        if (isDragging) {
+          isDragging = false;
+          resizer.classList.remove("dragging");
+          document.body.style.cursor = "";
+          document.body.style.userSelect = "";
+        }
+      });
+
+      document.addEventListener("DOMContentLoaded", () => {
+        connect();
+      });
+    </script>
+  </body>
 </html>
