@@ -235,14 +235,6 @@ After any refactoring or implementation change, check for orphaned code:
 
 Don't leave dead code lying around — it confuses future readers and agents. But don't silently delete things you're not sure about. When in doubt, ask.
 
-```
-DEAD CODE IDENTIFIED:
-- formatLegacyDate() in src/utils/date.ts — replaced by formatDate()
-- OldTaskCard component in src/components/ — replaced by TaskCard
-- LEGACY_API_URL constant in src/config.ts — no remaining references
-→ Safe to remove these?
-```
-
 ## Review Speed
 
 Slow reviews block entire teams. The cost of context-switching to review is less than the waiting cost imposed on others.
