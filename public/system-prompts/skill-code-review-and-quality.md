@@ -280,7 +280,6 @@ Part of code review is dependency review:
 
 ## The Review Checklist
 
-```markdown
 ## Review: [PR/Change title]
 
 ### Context
@@ -324,7 +323,7 @@ Part of code review is dependency review:
 ### Verdict
 - [ ] **Approve** — Ready to merge
 - [ ] **Request changes** — Issues must be addressed
-```
+
 ## See Also
 
 - For detailed security review guidance, see `references/security-checklist.md`
