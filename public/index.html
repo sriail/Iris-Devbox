@@ -1456,6 +1456,10 @@
             vga_bios: { url: "/v86/vgabios.bin" },
             autostart: true,
             disable_audio: true,
+            network: {
+            relay_url: `wss://${location.host}/wisp`,
+            type: "websocket"
+              }
           };
 
           if (customDiskPath) {
@@ -1533,39 +1537,79 @@
       }
 
       async function processQueueItem(item) {
-        isProcessing = true;
-        try {
-          addCommandOutput(item.cmd);
-          if (item.cmd.command) {
-            const output = await executeCommand(item.cmd.command);
-            addCommandResult(item.cmd, output);
-            serialBuffer = output;
-          }
-          if (ws && ws.readyState === WebSocket.OPEN) {
-            ws.send(
-              JSON.stringify({
-                type: "llm_query",
-                payload: {
-                  prompt: `VM Output:\n${serialBuffer}\n\nWhat should I do next?`,
-                  vmOutput: serialBuffer,
-                },
-              })
-            );
-          }
-        } catch (e) {
-          addChatMessage(
-            "system",
-            `Queue Error: ${e.message}, try Re-Sending`,
-            "System",
-            true
-          );
-        } finally {
-          isProcessing = false;
-          if (commandQueue.length > 0) {
-            setTimeout(() => processQueueItem(commandQueue.shift()), 500);
-          }
+  isProcessing = true;
+  try {
+    addCommandOutput(item.cmd);
+    
+    // Handle different tool types
+    if (item.cmd.tool === "command-tool" && item.cmd.command) {
+      const output = await executeCommand(item.cmd.command);
+      addCommandResult(item.cmd, output);
+      serialBuffer = output;
+    } 
+    else if (item.cmd.tool === "send-text" && item.cmd.text) {
+      emulator.serial0_send(item.cmd.text);
+      await new Promise(r => setTimeout(r, 500)); // Wait for keystrokes to register
+    } 
+    else if (item.cmd.tool === "send-keypress" && item.cmd.key) {
+      // Parse comma-separated keys (e.g., "Ctrl, C")
+      const keys = item.cmd.key.split(",").map(k => k.trim());
+      const ctrl = keys.includes("Ctrl");
+      const alt = keys.includes("Alt");
+      const shift = keys.includes("Shift");
+      const mainKey = keys.find(k => !["Ctrl", "Alt", "Shift"].includes(k));
+      
+      if (mainKey) {
+        let char = mainKey.toLowerCase();
+        // Basic mapping for common control keys
+        if (ctrl) {
+          if (char === 'c') emulator.serial0_send("\x03");
+          else if (char === 'd') emulator.serial0_send("\x04");
+          else if (char === 'z') emulator.serial0_send("\x1A");
+          else if (char === 'l') emulator.serial0_send("\x0C");
+          // Add more as needed
+        } else {
+          emulator.serial0_send(mainKey);
         }
       }
+      await new Promise(r => setTimeout(r, 300));
+    } 
+    else if (item.cmd.tool === "list-files" && item.cmd.path) {
+      const output = await executeCommand(`ls -la ${item.cmd.path}`);
+      addCommandResult(item.cmd, output);
+      serialBuffer = output;
+    } 
+    else if (item.cmd.tool === "view-console") {
+      // View-console doesn't need an action, we just send the current buffer back to the LLM
+      addCommandResult(item.cmd, serialBuffer);
+    }
+    
+    // Send results back to LLM to continue the agentic loop
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(
+        JSON.stringify({
+          type: "llm_query",
+          payload: {
+            prompt: `VM Output:\n${serialBuffer}\n\nWhat should I do next?`,
+            vmOutput: serialBuffer,
+          },
+        })
+      );
+    }
+  } catch (e) {
+    addChatMessage(
+      "system",
+      `Queue Error: ${e.message}, try Re-Sending`,
+      "System",
+      true
+    );
+  } finally {
+    isProcessing = false;
+    if (commandQueue.length > 0) {
+      setTimeout(() => processQueueItem(commandQueue.shift()), 500);
+    }
+  }
+}
 
       // --- Network Layer & WebSocket Event Loop ---
       function connect() {
