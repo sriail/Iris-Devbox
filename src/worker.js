@@ -1,3 +1,5 @@
+import { connect } from "cloudflare:sockets";
+
 var __defProp = Object.defineProperty;
 var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
 
@@ -7,31 +9,36 @@ var worker_default = {
   async fetch(request, env) {
     const url = new URL(request.url);
     
+    // Main Chat/LLM WebSocket
     if (url.pathname === "/ws" && request.headers.get("Upgrade")?.toLowerCase() === "websocket") {
       return handleWebSocket(env);
     }
+    
+    // Wisp Network Relay for v86 Internet Access
+    if (url.pathname === "/wisp" && request.headers.get("Upgrade")?.toLowerCase() === "websocket") {
+      return handleWispRelay(request, env);
+    }
+    
     if (url.pathname === "/upload" && request.method === "POST") {
       return handleUpload(request);
     }
     
-    // --- ADDED: GitHub Proxy Handler for v86 Image ---
-if (url.pathname === "/api/proxy-vm-image") {
-  // Point to your compressed file on GitHub (can be .zst or .gz)
-  const targetUrl = "https://raw.githubusercontent.com/sriail/Iris-Devbox/main/public/vm/iris-ai-vm.img.zst";
-  
-  const response = await fetch(targetUrl);
-  if (!response.ok) return new Response("Failed to fetch image", { status: 500 });
+    // GitHub Proxy Handler for v86 Image
+    if (url.pathname === "/api/proxy-vm-image") {
+      const targetUrl = "https://raw.githubusercontent.com/sriail/Iris-Devbox/main/public/vm/iris-ai-vm.img.zst";
+      
+      const response = await fetch(targetUrl);
+      if (!response.ok) return new Response("Failed to fetch image", { status: 500 });
 
-  const newHeaders = new Headers(response.headers);
-  newHeaders.set("Access-Control-Allow-Origin", "*");
-  newHeaders.set("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
-  
-  return new Response(response.body, {
-    status: 200,
-    headers: newHeaders
-  });
-}
-    // --- END OF PROXY HANDLER ---
+      const newHeaders = new Headers(response.headers);
+      newHeaders.set("Access-Control-Allow-Origin", "*");
+      newHeaders.set("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
+      
+      return new Response(response.body, {
+        status: 200,
+        headers: newHeaders
+      });
+    }
     
     if (env.ASSETS && typeof env.ASSETS.fetch === "function") {
       return env.ASSETS.fetch(request);
@@ -40,6 +47,118 @@ if (url.pathname === "/api/proxy-vm-image") {
     return new Response("Not Found", { status: 404 });
   }
 };
+
+// --- Wisp Relay Implementation ---
+// Allows the v86 VM to route TCP traffic over the WebSocket
+async function handleWispRelay(request, env) {
+  const pair = new WebSocketPair();
+  const client = pair[0];
+  const server = pair[1];
+  server.accept();
+  
+  const sockets = new Map();
+  let nextSocketId = 1;
+  
+  server.addEventListener("message", async (event) => {
+    let buffer = event.data;
+    if (buffer instanceof Blob) buffer = await buffer.arrayBuffer();
+    const data = new Uint8Array(buffer);
+    if (data.length === 0) return;
+    
+    const type = data[0];
+    
+    if (type === 0x01) { // CONNECT
+      const port = (data[1] << 8) | data[2];
+      const socketType = data[3]; // 1 = TCP, 3 = UDP
+      const hostname = new TextDecoder().decode(data.slice(4));
+      
+      if (socketType === 1) { // TCP Only for now
+        const socketId = nextSocketId++;
+        try {
+          const tcpSocket = connect({ hostname, port });
+          const writer = tcpSocket.writable.getWriter();
+          const reader = tcpSocket.readable.getReader();
+          
+          sockets.set(socketId, { writer, reader, closed: false });
+          
+          // Send CONTINUE
+          const continueMsg = new Uint8Array(7);
+          const view = new DataView(continueMsg.buffer);
+          view.setUint8(0, 0x02);
+          view.setUint32(1, socketId, false);
+          view.setUint16(5, 65535, false);
+          server.send(continueMsg);
+          
+          // Read loop
+          (async () => {
+            try {
+              while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                
+                const msg = new Uint8Array(5 + value.length);
+                const dv = new DataView(msg.buffer);
+                dv.setUint8(0, 0x03); // DATA
+                dv.setUint32(1, socketId, false);
+                msg.set(value, 5);
+                server.send(msg);
+              }
+            } catch (e) {}
+            
+            const sock = sockets.get(socketId);
+            if (sock && !sock.closed) {
+              sock.closed = true;
+              const closeMsg = new Uint8Array(6);
+              const dv = new DataView(closeMsg.buffer);
+              dv.setUint8(0, 0x04); // CLOSE
+              dv.setUint32(1, socketId, false);
+              dv.setUint8(5, 0x02); 
+              server.send(closeMsg);
+            }
+            sockets.delete(socketId);
+          })();
+        } catch (err) {
+          const closeMsg = new Uint8Array(6);
+          const dv = new DataView(closeMsg.buffer);
+          dv.setUint8(0, 0x04); // CLOSE
+          dv.setUint32(1, socketId, false);
+          dv.setUint8(5, 0x03); 
+          server.send(closeMsg);
+        }
+      }
+    } else if (type === 0x03) { // DATA
+      const view = new DataView(data.buffer);
+      const socketId = view.getUint32(1, false);
+      const payload = data.slice(5);
+      const sock = sockets.get(socketId);
+      if (sock && !sock.closed) {
+        try {
+          await sock.writer.write(payload);
+        } catch(e) {}
+      }
+    } else if (type === 0x04) { // CLOSE
+      const view = new DataView(data.buffer);
+      const socketId = view.getUint32(1, false);
+      const sock = sockets.get(socketId);
+      if (sock) {
+        sock.closed = true;
+        try { await sock.writer.close(); } catch(e) {}
+        sockets.delete(socketId);
+      }
+    }
+  });
+  
+  server.addEventListener("close", () => {
+    for (const [, sock] of sockets) {
+      sock.closed = true;
+      try { sock.writer.close(); } catch(e) {}
+    }
+    sockets.clear();
+  });
+  
+  return new Response(null, { status: 101, webSocket: client });
+}
+__name(handleWispRelay, "handleWispRelay");
 
 async function handleWebSocket(env) {
   const pair = new WebSocketPair();
@@ -117,7 +236,6 @@ async function handleMessage(data, sessionId, env) {
       const vmOutput = data.payload.vmOutput || "";
       const fileList = [...session.files.keys()];
       
-      // Add user message to history
       session.chatHistory.push({
         role: "user",
         content: prompt
@@ -125,34 +243,17 @@ async function handleMessage(data, sessionId, env) {
       
       const response = await queryGroq(prompt, vmOutput, fileList, session.chatHistory, env);
       
-      // Add assistant response to history
       session.chatHistory.push({
         role: "assistant",
         content: response
       });
       
-      // Parse for vm-tool commands
       const commands = parseVMCommands(response);
       
       session.ws.send(JSON.stringify({
         type: "llm_response",
         response: response,
         commands: commands
-      }));
-      break;
-      
-    case "file_list":
-      session.ws.send(JSON.stringify({
-        type: "file_list",
-        files: [...session.files.keys()]
-      }));
-      break;
-      
-    case "export_files":
-      const homeFiles = data.payload.files || [];
-      session.ws.send(JSON.stringify({
-        type: "files_exported",
-        files: homeFiles
       }));
       break;
   }
@@ -165,7 +266,6 @@ function parseVMCommands(response) {
   
   for (const line of lines) {
     try {
-      // Try to parse JSON from the line
       const trimmed = line.trim();
       if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
         const obj = JSON.parse(trimmed);
@@ -173,15 +273,15 @@ function parseVMCommands(response) {
           commands.push({
             tool: obj["vm-tool"],
             reasoning: obj.reasoning || "",
-            command: obj["command-sent"] || obj.command || ""
+            command: obj["command-sent"] || obj.command || "",
+            path: obj.path || "",
+            text: obj.text || "",
+            key: obj.key || ""
           });
         }
       }
-    } catch (e) {
-      // Skip lines that aren't valid JSON
-    }
+    } catch (e) { }
   }
-  
   return commands;
 }
 __name(parseVMCommands, "parseVMCommands");
@@ -191,21 +291,26 @@ async function queryGroq(prompt, vmOutput, fileList, chatHistory, env) {
     const systemPrompt = `You are a helpful AI assistant running inside a Linux VM development environment. You have access to a terminal and can help the user with development tasks.
 
 You can use the following tools by responding with JSON objects on separate lines:
-1. To execute shell commands, include: {"vm-tool": "command", "reasoning": "explanation", "command-sent": "your command"}
-2. To list files: {"vm-tool": "list-files", "reasoning": "explanation"}
-3. To show help: {"vm-tool": "help", "reasoning": "explanation"}
+1. To execute shell commands: {"vm-tool": "command-tool", "reasoning": "explanation", "command-sent": "your command"}
+2. To list files: {"vm-tool": "list-files", "reasoning": "explanation", "path": "/absolute/path"}
+3. To write text (e.g. into an editor, no Enter): {"vm-tool": "send-text", "reasoning": "explanation", "text": "your text"}
+4. To send keypresses (e.g. Ctrl+C, Enter): {"vm-tool": "send-keypress", "reasoning": "explanation", "key": "Ctrl, C"}
+5. To view the console screen: {"vm-tool": "view-console", "reasoning": "explanation"}
 
 Always explain your reasoning before providing commands. Be concise and helpful.
-${fileList.length > 0 ? `\nUser has uploaded files: ${fileList.join(", ")}` : ""}
+ ${fileList.length > 0 ? `\nUser has uploaded files: ${fileList.join(", ")}` : ""}
+
+Ground Rules:
+- Never run interactive processes (e.g., nano, top without -b -n 1, python3 without -c or a script file). Commands must execute and return control to the shell.
+- Use heredocs for file creation: cat << 'EOF' > file.txt ... EOF
+- Observe -> Act -> Observe. Call view-console after commands to verify state.
+- One command per call. Do not chain unrelated commands with ; unless they form a single logical unit.
 
 Current VM state:
-${vmOutput ? `Last command output:\n${vmOutput}` : "VM just booted, waiting for first command."}`;
+ ${vmOutput ? `Last command output:\n${vmOutput}` : "VM just booted, waiting for first command."}`;
 
     const messages = [
-      {
-        role: "system",
-        content: systemPrompt
-      },
+      { role: "system", content: systemPrompt },
       ...chatHistory
     ];
 
