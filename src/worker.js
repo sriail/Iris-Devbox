@@ -1,4 +1,34 @@
 import { connect } from "cloudflare:sockets";
+// System prompt Imports
+import promptAgentLongCodeScan from '../public/system-docs/system-prompts/agent-long-code-scan.md';
+import promptAgentShortCodeScan from '../public/system-docs/system-prompts/prompt-agent-short-code-scan.md';
+import promptSystem from '../public/system-docs/system-prompts/prompt-system.md';
+// Skill Imports
+import skillApiAndInfrenceDesign from '../public/system-docs/skills/skill-api-and-infrence-design.md';
+import skillCodeReviewAndQuality from '../public/system-docs/skills/skill-code-review-and-quality.md';
+import skillCodeSimplification from '../public/system-docs/skills/skill-code-simplification.md';
+import skillContextEngineering from '../public/system-docs/skills/skill-context-engineering.md';
+import skillDebugingAndErrorRecovery from '../public/system-docs/skills/skill-debuging-and-error-recovery.md';
+import skillDeprecationAndMigration from '../public/system-docs/skills/skill-deprecation-and-migration.md';
+import skillDocxCreationAndDataExtraction from '../public/system-docs/skills/skill-docx-creation-and-data-extraction.md';
+import skillDoubleDrivenDevelopment from '../public/system-docs/skills/skill-double-driven-development.md';
+import skillDoubtDrivenDevelopment from '../public/system-docs/skills/skill-doubt-driven-development.md';
+import skillFrontendDesign from '../public/system-docs/skills/skill-frontend-design.md';
+import skillFrontendUiEngineering from '../public/system-docs/skills/skill-frontend-ui-engineering.md';
+import skillGitWorkflowAndVersioning from '../public/system-docs/skills/skill-git-workflow-and-versioning.md';
+import skillIdeaRefine from '../public/system-docs/skills/skill-idea-refine.md';
+import skillObservabilityAndInstrumentation from '../public/system-docs/skills/skill-observability-and-instrumentation.md';
+import skillPdfCreationAndEditing from '../public/system-docs/skills/skill-pdf-creation-and-editing.md';
+import skillPerformanceOptimization from '../public/system-docs/skills/skill-performance-optimization.md';
+import skillPlanningAndTaskBreakdown from '../public/system-docs/skills/skill-planning-and-task-breakdown.md';
+import skillSecurityAndHardening from '../public/system-docs/skills/skill-security-and-hardening.md';
+import skillShippingAndLaunch from '../public/system-docs/skills/skill-shipping-and-launch.md';
+import skillSpecDrivenDevelopment from '../public/system-docs/skills/skill-spec-driven-development.md';
+import skillTestDrivenDevelopment from '../public/system-docs/skills/skill-test-driven-development.md';
+import skillTestingWebsitesAndFrameworks from '../public/system-docs/skills/skill-testing-websites-and-frameworks.md';
+import skillXlsxAndDataExtraction from '../public/system-docs/skills/skill-xlsx-and-data-extraction.md';
+// VM Instructions Imports
+import instructions from '../public/system-docs/instructions/instructions.md';
 
 var __defProp = Object.defineProperty;
 var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
