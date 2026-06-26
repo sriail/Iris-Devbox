@@ -2,7 +2,7 @@ name = "iris-ai-vm"
 main = "src/worker.js"
 compatibility_date = "2026-06-15"
 
-[[build.upload.rules]]
+[[rules]]
 type = "Text"
 globs = ["**/*.md"]
 fallthrough = true
