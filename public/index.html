@@ -1479,6 +1479,30 @@
               "System"
             );
             
+            // v86 natively streams and decompresses .zst files! 
+            // We append /disk.img.zst to the proxy URL so v86's internal logic detects the format.
+            config.hda = { 
+              url: "/api/proxy-vm-image/disk.img.zst" 
+            };
+            
+            addChatMessage("system", "Booting VM...", "System");
+          }
+
+          emulator = new StarterConstructor(config);
+          vmBooted = true;
+          if (sessionId && sessionEl)
+            sessionEl.textContent = sessionId.slice(0, 8);
+          monitorSerialPort();
+        } catch (error) {
+          addChatMessage(
+            "system",
+            `StartVM Failure: ${error.message}, try Clearing cache or Reloading`,
+            "System",
+            true
+          );
+        }
+      }
+            
             // Fetch the .zst file, decompress it in the browser, and create a Blob URL.
             // Blob URLs support Range requests natively, which v86 requires to boot.
             const response = await fetch("/api/proxy-vm-image");
