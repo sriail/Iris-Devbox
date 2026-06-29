@@ -6,16 +6,11 @@
     <title>BETA: Iris Ai</title>
     <style>
       :root {
-        /* 3 Shades of White */
-        --w1: #ffffff; /* Pure White - Main panels, inputs */
-        --w2: #e9e9e9; /* Off White - Chat background, secondary buttons */
-        --w3: #e5e7eb; /* Light Gray - Borders, hover states */
-
-        /* 1 Shade of Green Accent */
+        --w1: #ffffff;
+        --w2: #e9e9e9;
+        --w3: #e5e7eb;
         --accent: #25e69e;
         --accent-hover: #1bc985;
-
-        /* Functional Colors */
         --text-primary: #111827;
         --text-secondary: #6b7280;
         --danger: #ef4444;
@@ -30,7 +25,7 @@
         margin: 0;
         height: 100vh;
         display: grid;
-        grid-template-columns: 1fr 6px 400px; /* 6px for resizer */
+        grid-template-columns: 1fr 6px 400px;
         background: var(--w2);
         color: var(--text-primary);
         font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
@@ -40,7 +35,6 @@
         overflow: hidden;
       }
 
-      /* Resizer Bar */
       #resizer {
         background: var(--w3);
         cursor: col-resize;
@@ -53,7 +47,6 @@
         background: var(--accent);
       }
 
-      /* Main View & Navbar */
       #main-view {
         display: flex;
         flex-direction: column;
@@ -72,7 +65,7 @@
         flex: none;
         z-index: 10;
         align-items: center;
-        height: 57px; /* Explicit matching height */
+        height: 57px;
       }
 
       .tab-btn {
@@ -104,7 +97,6 @@
         border-color: var(--accent);
       }
 
-      /* Fixed View Content Logic */
       .view-content {
         flex: 1;
         display: none;
@@ -123,7 +115,6 @@
         flex: 1;
       }
 
-      /* Workspace View & File Tree */
       #workspace-container {
         background: var(--w2);
         overflow-y: auto;
@@ -301,14 +292,13 @@
         line-height: 1.5;
       }
 
-      /* Sidebar & Chat */
       #sidebar {
         display: flex;
         flex-direction: column;
         background: var(--w1);
         border-left: 1px solid var(--w3);
         overflow: hidden;
-        min-width: 300px; /* Prevent shrinking too much */
+        min-width: 300px;
       }
 
       .sidebar-header {
@@ -427,7 +417,6 @@
         border-bottom-left-radius: 4px;
       }
 
-      /* Markdown Styling */
       .message-content.markdown > *:first-child {
         margin-top: 0;
       }
@@ -537,7 +526,6 @@
         color: var(--text-primary);
       }
 
-      /* Message Actions (Copy/Regenerate) */
       .message-actions {
         display: flex;
         gap: 8px;
@@ -569,7 +557,6 @@
           saturate(389%) hue-rotate(107deg) brightness(95%) contrast(92%);
       }
 
-      /* Controls */
       #controls {
         padding: 16px;
         border-top: 1px solid var(--w3);
@@ -647,7 +634,7 @@
         display: flex;
         align-items: center;
         gap: 8px;
-        flex-wrap: wrap; /* Prevents toggles from disappearing on shrink */
+        flex-wrap: wrap;
       }
 
       button {
@@ -739,7 +726,6 @@
         display: none;
       }
 
-      /* SVG Icon Utilities - Refined for Tabbler Icons */
       .ic {
         width: 16px;
         height: 16px;
@@ -759,7 +745,6 @@
         margin-bottom: 16px;
       }
 
-      /* Default Tabbler is black. We use filters to map to our theme colors. */
       .ic-gray {
         filter: brightness(0) saturate(100%) invert(60%) sepia(0%) saturate(0%)
           hue-rotate(0deg) brightness(100%) contrast(100%);
@@ -784,12 +769,10 @@
           brightness(95%) contrast(85%);
       }
 
-      /* Handle Hover/Active States cleanly */
       button:hover .ic-black {
         filter: brightness(0) invert(1);
         opacity: 1;
       }
-      /* Make File and Folder button icons black on hover */
       button.secondary:hover .ic-gray {
         filter: brightness(0) saturate(100%);
         opacity: 1;
@@ -815,7 +798,6 @@
         opacity: 1;
       }
 
-      /* Custom Scrollbar Styling */
       ::-webkit-scrollbar {
         width: 8px;
         height: 8px;
@@ -964,8 +946,6 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
     <script src="/v86/libv86.js"></script>
-    <!-- Restored fzstd library -->
-    <script src="https://cdn.jsdelivr.net/npm/fzstd@0.1.1/umd/index.js"></script>
     
     <script>
       // --- Global Application State ---
@@ -979,11 +959,11 @@
       let isProcessing = false;
       let pendingAttachments = [];
       let thinkingModeEnabled = false;
-      let quietModeEnabled = true; // Default to true
+      let quietModeEnabled = true;
       let workspaceFiles = [];
 
-      const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
-      const MAX_FOLDER_SIZE = 300 * 1024 * 1024; // 300MB
+      const MAX_FILE_SIZE = 50 * 1024 * 1024;
+      const MAX_FOLDER_SIZE = 300 * 1024 * 1024;
 
       // --- DOM Element Selection ---
       const sessionEl = document.getElementById("session");
@@ -1004,7 +984,6 @@
 
       // --- UI Display Helpers ---
       function addChatMessage(role, content, label = null, isError = false) {
-        // Quiet Mode Logic: Hide ONLY non-essential system messages. Keep User, LLM, and Errors.
         if (quietModeEnabled && role === "system" && !isError) return null;
 
         const msgDiv = document.createElement("div");
@@ -1042,7 +1021,6 @@
         chatEl.appendChild(msgDiv);
         chatEl.scrollTop = chatEl.scrollHeight;
 
-        // Add Copy & Regenerate buttons to User messages
         if (role === "user" && !isError) {
           const actionsDiv = document.createElement("div");
           actionsDiv.className = "message-actions";
@@ -1466,7 +1444,6 @@
           };
 
           if (customDiskPath) {
-            // Distinguish between ISO (cdrom) and IMG (hda)
             if (customDiskPath.endsWith(".iso")) {
               config.cdrom = { url: customDiskPath };
             } else {
@@ -1485,37 +1462,6 @@
               url: "/api/proxy-vm-image/disk.img.zst" 
             };
             
-            addChatMessage("system", "Booting VM...", "System");
-          }
-
-          emulator = new StarterConstructor(config);
-          vmBooted = true;
-          if (sessionId && sessionEl)
-            sessionEl.textContent = sessionId.slice(0, 8);
-          monitorSerialPort();
-        } catch (error) {
-          addChatMessage(
-            "system",
-            `StartVM Failure: ${error.message}, try Clearing cache or Reloading`,
-            "System",
-            true
-          );
-        }
-      }
-            
-            // Fetch the .zst file, decompress it in the browser, and create a Blob URL.
-            // Blob URLs support Range requests natively, which v86 requires to boot.
-            const response = await fetch("/api/proxy-vm-image");
-            if (!response.ok) throw new Error("Failed to pull system image, try Clearing cache.");
-            
-            const compressedData = await response.arrayBuffer();
-            if (typeof fzstd === "undefined") throw new Error("Decompression engine missing.");
-            
-            const decompressedBytes = fzstd.decompress(new Uint8Array(compressedData));
-            const diskBlob = new Blob([decompressedBytes], { type: "application/octet-stream" });
-            const localBlobUrl = URL.createObjectURL(diskBlob);
-            
-            config.hda = { url: localBlobUrl, async: false };
             addChatMessage("system", "Booting VM...", "System");
           }
 
@@ -1579,10 +1525,9 @@
           } 
           else if (item.cmd.tool === "send-text" && item.cmd.text) {
             emulator.serial0_send(item.cmd.text);
-            await new Promise(r => setTimeout(r, 500)); // Wait for keystrokes to register
+            await new Promise(r => setTimeout(r, 500));
           } 
           else if (item.cmd.tool === "send-keypress" && item.cmd.key) {
-            // Parse comma-separated keys (e.g., "Ctrl, C")
             const keys = item.cmd.key.split(",").map(k => k.trim());
             const ctrl = keys.includes("Ctrl");
             const alt = keys.includes("Alt");
@@ -1591,13 +1536,11 @@
             
             if (mainKey) {
               let char = mainKey.toLowerCase();
-              // Basic mapping for common control keys
               if (ctrl) {
                 if (char === 'c') emulator.serial0_send("\x03");
                 else if (char === 'd') emulator.serial0_send("\x04");
                 else if (char === 'z') emulator.serial0_send("\x1A");
                 else if (char === 'l') emulator.serial0_send("\x0C");
-                // Add more as needed
               } else {
                 emulator.serial0_send(mainKey);
               }
@@ -1610,11 +1553,9 @@
             serialBuffer = output;
           } 
           else if (item.cmd.tool === "view-console") {
-            // View-console doesn't need an action, we just send the current buffer back to the LLM
             addCommandResult(item.cmd, serialBuffer);
           }
           
-          // Send results back to LLM to continue the agentic loop
           if (ws && ws.readyState === WebSocket.OPEN) {
             ws.send(
               JSON.stringify({
@@ -1881,7 +1822,6 @@
       quietToggle.addEventListener("change", (e) => {
         quietModeEnabled = e.target.checked;
         if (quietModeEnabled) {
-          // Hide ONLY non-essential system messages
           document
             .querySelectorAll(".chat-message.system:not(.error)")
             .forEach((el) => (el.style.display = "none"));
