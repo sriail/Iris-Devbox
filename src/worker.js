@@ -55,7 +55,7 @@ var worker_default = {
     
     // GitHub Proxy Handler for v86 Image
     if (url.pathname === "/api/proxy-vm-image") {
-      const targetUrl = "https://raw.githubusercontent.com/sriail/Iris-Devbox/main/public/vm/iris-ai-vm.img.zst";
+      const targetUrl = "https://raw.githubusercontent.com/sriail/Iris-Devbox/main/public/vm/iris-llm-vm-devbox.img.zst";
       
       const response = await fetch(targetUrl);
       if (!response.ok) return new Response("Failed to fetch image", { status: 500 });
