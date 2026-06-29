@@ -53,51 +53,59 @@ var worker_default = {
       return handleUpload(request);
     }
     
-    // GitHub Proxy Handler for v86 Image
-   // GitHub Proxy Handler for v86 Image (.zst — let v86 decompress client-side)
-if (url.pathname === "/api/proxy-vm-image") {
-  // Preflight
-  if (request.method === "OPTIONS") {
-    return new Response(null, {
-      status: 204,
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
-        "Access-Control-Allow-Headers": "Range",
-        "Access-Control-Max-Age": "86400",
-        "Access-Control-Expose-Headers": "Content-Length, Content-Range, Accept-Ranges, Content-Type"
+    // GitHub Proxy Handler for v86 Image (.zst — let v86 decompress client-side)
+    if (url.pathname.startsWith("/api/proxy-vm-image")) {
+      // Preflight
+      if (request.method === "OPTIONS") {
+        return new Response(null, {
+          status: 204,
+          headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
+            "Access-Control-Allow-Headers": "Range",
+            "Access-Control-Max-Age": "86400",
+            "Access-Control-Expose-Headers": "Content-Length, Content-Range, Accept-Ranges, Content-Type"
+          }
+        });
       }
-    });
+
+      const targetUrl = "https://raw.githubusercontent.com/sriail/Iris-Devbox/main/public/vm/iris-llm-vm-devbox.img.zst";
+
+      // Fetch upstream; forward Range so v86 can request byte ranges if it wants to
+      const upstreamReq = new Request(targetUrl, { method: request.method });
+      const range = request.headers.get("Range");
+      if (range) upstreamReq.headers.set("Range", range);
+
+      const upstream = await fetch(upstreamReq);
+      if (!upstream.ok && upstream.status !== 206) {
+        return new Response(`Upstream error: ${upstream.status}`, { status: 502 });
+      }
+
+      const headers = new Headers(upstream.headers);
+      headers.set("Access-Control-Allow-Origin", "*");
+      headers.set("Access-Control-Expose-Headers", "Content-Length, Content-Range, Accept-Ranges, Content-Type");
+      headers.set("Accept-Ranges", "bytes");
+      // DO NOT set Content-Encoding: zstd — the .zst IS the payload, not transport encoding
+      headers.delete("Content-Encoding");
+      // Make sure Content-Type is sane
+      if (!headers.get("Content-Type")) headers.set("Content-Type", "application/octet-stream");
+
+      // Stream the body straight through
+      return new Response(upstream.body, {
+        status: upstream.status,
+        statusText: upstream.statusText,
+        headers
+      });
+    }
+    
+    // Serve static assets if not handled above
+    if (env.ASSETS && typeof env.ASSETS.fetch === "function") {
+      return env.ASSETS.fetch(request);
+    }
+    
+    return new Response("Not Found", { status: 404 });
   }
-
-  const targetUrl = "https://raw.githubusercontent.com/sriail/Iris-Devbox/main/public/vm/iris-llm-vm-devbox.img.zst";
-
-  // Fetch upstream; forward Range so v86 can request byte ranges if it wants to
-  const upstreamReq = new Request(targetUrl, { method: request.method });
-  const range = request.headers.get("Range");
-  if (range) upstreamReq.headers.set("Range", range);
-
-  const upstream = await fetch(upstreamReq);
-  if (!upstream.ok && upstream.status !== 206) {
-    return new Response(`Upstream error: ${upstream.status}`, { status: 502 });
-  }
-
-  const headers = new Headers(upstream.headers);
-  headers.set("Access-Control-Allow-Origin", "*");
-  headers.set("Access-Control-Expose-Headers", "Content-Length, Content-Range, Accept-Ranges, Content-Type");
-  headers.set("Accept-Ranges", "bytes");
-  // DO NOT set Content-Encoding: zstd — the .zst IS the payload, not transport encoding
-  headers.delete("Content-Encoding");
-  // Make sure Content-Type is sane
-  if (!headers.get("Content-Type")) headers.set("Content-Type", "application/octet-stream");
-
-  // Stream the body straight through
-  return new Response(upstream.body, {
-    status: upstream.status,
-    statusText: upstream.statusText,
-    headers
-  });
-}
+};
 
 // --- Wisp Relay Implementation ---
 // Allows the v86 VM to route TCP traffic over the WebSocket
