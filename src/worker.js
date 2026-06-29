@@ -397,6 +397,4 @@ Current VM state:
 }
 __name(queryGroq, "queryGroq");
 
-export {
-  worker_default as default
-};
+export default worker_default;
