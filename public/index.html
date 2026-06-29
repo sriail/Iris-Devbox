@@ -964,6 +964,9 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
     <script src="/v86/libv86.js"></script>
+    <!-- Restored fzstd library -->
+    <script src="https://cdn.jsdelivr.net/npm/fzstd@0.1.1/umd/index.js"></script>
+    
     <script>
       // --- Global Application State ---
       let ws = null;
@@ -1425,7 +1428,7 @@
           }" class="ic sm ic-gray" /><span>${item.name}</span>`;
           attachmentsDiv.appendChild(chip);
         });
-        msgEl.appendChild(attachmentsDiv); // Fixed bug: msgDiv -> msgEl
+        msgEl.appendChild(attachmentsDiv);
       }
 
       // --- Adaptive V86 Emulator Engine Initialization ---
@@ -1476,12 +1479,19 @@
               "System"
             );
             
-            // v86 natively streams and decompresses .zst files! 
-            // We append /disk.img.zst to the proxy URL so v86's internal logic detects the format.
-            config.hda = { 
-              url: "/api/proxy-vm-image/disk.img.zst" 
-            };
+            // Fetch the .zst file, decompress it in the browser, and create a Blob URL.
+            // Blob URLs support Range requests natively, which v86 requires to boot.
+            const response = await fetch("/api/proxy-vm-image");
+            if (!response.ok) throw new Error("Failed to pull system image, try Clearing cache.");
             
+            const compressedData = await response.arrayBuffer();
+            if (typeof fzstd === "undefined") throw new Error("Decompression engine missing.");
+            
+            const decompressedBytes = fzstd.decompress(new Uint8Array(compressedData));
+            const diskBlob = new Blob([decompressedBytes], { type: "application/octet-stream" });
+            const localBlobUrl = URL.createObjectURL(diskBlob);
+            
+            config.hda = { url: localBlobUrl, async: false };
             addChatMessage("system", "Booting VM...", "System");
           }
 
