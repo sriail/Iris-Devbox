@@ -1429,80 +1429,71 @@
       }
 
       // --- Adaptive V86 Emulator Engine Initialization ---
-      async function initV86Emulator(customDiskPath = null) {
-        let StarterConstructor = window.V86 || window.V86Starter;
-        if (!StarterConstructor) {
-          addChatMessage(
-            "system",
-            "V86 Engine binding missing, try Clearing cache",
-            "System",
-            true
-          );
-          return;
-        }
-        if (emulator) {
-          try {
-            emulator.destroy();
-          } catch (e) {}
-        }
+     async function initV86Emulator(customDiskPath = null) {
+  let StarterConstructor = window.V86 || window.V86Starter;
+  if (!StarterConstructor) {
+    addChatMessage(
+      "system",
+      "V86 Engine binding missing, try Clearing cache",
+      "System",
+      true
+    );
+    return;
+  }
+  if (emulator) {
+    try {
+      emulator.destroy();
+    } catch (e) {}
+  }
 
-        try {
-          const config = {
-            wasm_path: "/v86/v86.wasm",
-            memory_size: 512 * 1024 * 1024,
-            vga_memory_size: 16 * 1024 * 1024,
-            screen_container: screen,
-            bios: { url: "/v86/seabios.bin" },
-            vga_bios: { url: "/v86/vgabios.bin" },
-            autostart: true,
-            disable_audio: true,
-            network: {
-            relay_url: `wss://${location.host}/wisp`,
-            type: "websocket"
-              }
-          };
-
-          if (customDiskPath) {
-            config.cdrom = { url: customDiskPath };
-          } else {
-            addChatMessage(
-              "system",
-              "Downloading Iris VM image, hang Tight...",
-              "System"
-            );
-            const response = await fetch("/api/proxy-vm-image");
-            if (!response.ok)
-              throw new Error(
-                "Failed to pull system image, try Clearing cache."
-              );
-            const compressedData = await response.arrayBuffer();
-            if (typeof fzstd === "undefined")
-              throw new Error("Decompression engine missing.");
-            const decompressedBytes = fzstd.decompress(
-              new Uint8Array(compressedData)
-            );
-            const diskBlob = new Blob([decompressedBytes], {
-              type: "application/octet-stream",
-            });
-            const localBlobUrl = URL.createObjectURL(diskBlob);
-            config.hda = { url: localBlobUrl, async: false };
-            addChatMessage("system", "Booting VM...", "System");
-          }
-
-          emulator = new StarterConstructor(config);
-          vmBooted = true;
-          if (sessionId && sessionEl)
-            sessionEl.textContent = sessionId.slice(0, 8);
-          monitorSerialPort();
-        } catch (error) {
-          addChatMessage(
-            "system",
-            `StartVM Failure: ${error.message}, try Clearing cache or Reloading`,
-            "System",
-            true
-          );
-        }
+  try {
+    const config = {
+      wasm_path: "/v86/v86.wasm",
+      memory_size: 512 * 1024 * 1024,
+      vga_memory_size: 16 * 1024 * 1024,
+      screen_container: screen,
+      bios: { url: "/v86/seabios.bin" },
+      vga_bios: { url: "/v86/vgabios.bin" },
+      autostart: true,
+      disable_audio: true,
+      network: {
+        relay_url: `wss://${location.host}/wisp`,
+        type: "websocket"
       }
+    };
+
+    if (customDiskPath) {
+      config.cdrom = { url: customDiskPath };
+    } else {
+      addChatMessage(
+        "system",
+        "Downloading Iris VM image, hang Tight...",
+        "System"
+      );
+      
+      // v86 natively streams and decompresses .zst files! 
+      // We append /disk.img.zst to the proxy URL so v86's internal logic detects the format.
+      config.hda = { 
+        url: "/api/proxy-vm-image/disk.img.zst" 
+      };
+      
+      addChatMessage("system", "Booting VM...", "System");
+    }
+
+    emulator = new StarterConstructor(config);
+    vmBooted = true;
+    if (sessionId && sessionEl)
+      sessionEl.textContent = sessionId.slice(0, 8);
+    monitorSerialPort();
+  } catch (error) {
+    addChatMessage(
+      "system",
+      `StartVM Failure: ${error.message}, try Clearing cache or Reloading`,
+      "System",
+      true
+    );
+  }
+}
 
       function monitorSerialPort() {
         if (!emulator) return;
