@@ -28,7 +28,6 @@ export default {
     if (request.method === "OPTIONS") return cors(new Response(null, { status: 204 }));
 
     // ── Static assets ────────────────────────────────────────────────
-    if (env.ASSETS?.fetch) return env.ASSETS.fetch(request);
-    return jsonError("Not Found", 404);
+    return serveAsset(request, env);
   }
 };
