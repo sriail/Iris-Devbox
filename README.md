@@ -1,13 +1,15 @@
+
+
 <picture>
   <!-- Dark mode -->
   <source
-    srcset="readme/"
+    srcset="readme/readme-image-arcatecture-dark.png"
     media="(prefers-color-scheme: dark)"
   >
 
   <!-- Light mode (fallback) -->
   <img
-    src="docs/diagram-light.png"
+    src="readme/readme-image-arcatecture-light.png"
     alt="Project architecture diagram"
   >
 </picture>
