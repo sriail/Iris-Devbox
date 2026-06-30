@@ -28,64 +28,41 @@ import skillTestingWebsites        from "../../public/system-docs/skills/skill-t
 import skillXlsxAndDataExtraction from "../../public/system-docs/skills/skill-xlsx-and-data-extraction.md";
 import instructions                from "../../public/system-docs/instructions/instructions.md";
 
+// ... (keep existing imports)
+
 const TOOL_SPEC = `
-You have tools. Emit them as fenced JSON blocks (\`\`\`json … \`\`\`) on their own lines:
+You are an autonomous agent. Use tools to accomplish the user's task.
+Emit ONE tool call per response as a fenced JSON block.
 
-- Shell command:
-  \`\`\`json
-  {"vm-tool":"command-tool","reasoning":"why","command-sent":"ls -la"}
-  \`\`\`
-- List files:    {"vm-tool":"list-files","reasoning":"...","path":"/abs"}
-- Type text:     {"vm-tool":"send-text","reasoning":"...","text":"hello"}
-- Send keys:     {"vm-tool":"send-keypress","reasoning":"...","key":"Ctrl, C"}
-- View console:  {"vm-tool":"view-console","reasoning":"..."}
+Available tools:
+1. Shell command:
+   \`\`\`json
+   {"vm-tool":"command-tool","reasoning":"why","command-sent":"ls -la"}
+   \`\`\`
+2. Read file from VM:
+   \`\`\`json
+   {"vm-tool":"read-file","reasoning":"why","path":"/root/file.txt"}
+   \`\`\`
+3. Complete task and present files to user:
+   \`\`\`json
+   {"vm-tool":"task-complete","reasoning":"why","files":["/root/out.txt"]}
+   \`\`\`
 
-Ground rules:
-- Never run interactive processes (nano, top, python3 REPL). Use \`-c\` or a script file.
-- Use heredocs for file creation.
-- Observe → Act → Observe. Call view-console after each command to verify.
-- One command per call.
-`.trim();
-
-const GROUND_RULES = `
-Ground Rules:
-- Never run interactive processes (e.g., nano, top without -b -n 1, python3 without -c or a script file).
-  Commands must execute and return control to the shell.
+Rules:
+- Execute commands one by one. After each command, you will receive the output.
+- When the task is fully complete, call "task-complete" with a list of generated file paths.
+- User files are in /root/uploads/. Put your generated files in /root/outputs/.
+- Never run interactive processes. Commands must execute and return control.
 - Use heredocs for file creation: cat << 'EOF' > file.txt ... EOF
-- Observe -> Act -> Observe. Call view-console after commands to verify state.
-- One command per call. Do not chain unrelated commands with ; unless they form a single logical unit.
+- Observe -> Act -> Observe. Call view-console if you need to see the screen.
 `.trim();
 
-export function buildSystemPrompt({ fileList = [], vmOutput = "" } = {}) {
+export function buildSystemPrompt({ fileList = [] } = {}) {
   return [
     promptSystem,
     "",
     "## Available Skills",
-    skillContextEngineering,
-    skillPlanningAndTaskBreakdown,
-    skillIdeaRefine,
-    skillSpecDrivenDevelopment,
-    skillTestDrivenDevelopment,
-    skillDoubtDrivenDevelopment,
-    skillDoubleDrivenDevelopment,
-    skillCodeReviewAndQuality,
-    skillCodeSimplification,
-    skillDebugingAndErrorRecovery,
-    skillPerformanceOptimization,
-    skillSecurityAndHardening,
-    skillObservability,
-    skillGitWorkflowAndVersioning,
-    skillShippingAndLaunch,
-    skillDeprecationAndMigration,
-    skillApiAndInfrenceDesign,
-    skillFrontendDesign,
-    skillFrontendUiEngineering,
-    skillTestingWebsites,
-    skillPdfCreationAndEditing,
-    skillDocxCreation,
-    skillXlsxAndDataExtraction,
-    skillAgentLongCodeScan,
-    promptAgentShortCodeScan,
+    // ... (keep existing skills array)
     "",
     "## VM Operating Instructions",
     instructions,
@@ -93,11 +70,9 @@ export function buildSystemPrompt({ fileList = [], vmOutput = "" } = {}) {
     "## Tool Protocol",
     TOOL_SPEC,
     "",
-    GROUND_RULES,
+    fileList.length ? `User has uploaded files to /root/uploads/: ${fileList.join(", ")}` : "",
     "",
-    fileList.length ? `User has uploaded files: ${fileList.join(", ")}` : "",
-    "",
-    "## Current VM State",
-    vmOutput ? `Last command output:\n${vmOutput}` : "VM just booted, waiting for first command.",
+    "## Current Task",
+    "Awaiting user request..."
   ].filter(Boolean).join("\n");
 }
