@@ -1,19 +1,13 @@
-// Extract {"vm-tool": ...} objects from LLM output. Accepts:
-//   - fenced ```json blocks
-//   - bare single-line JSON objects
-//   - multi-line JSON objects (balanced braces)
 export function parseVMCommands(response) {
   if (typeof response !== "string") return [];
   const commands = [];
 
-  // 1) Fenced ```json ... ``` blocks
   const fenceRe = /```(?:json)?\s*\n([\s\S]*?)\n```/gi;
   for (const m of response.matchAll(fenceRe)) {
     const obj = tryParseToolObject(m[1]);
     if (obj) commands.push(normalizeCommand(obj));
   }
 
-  // 2) Bare balanced-brace JSON objects containing "vm-tool"
   for (const obj of scanForObjects(response)) {
     if (!commands.some(c => JSON.stringify(c) === JSON.stringify(normalizeCommand(obj)))) {
       commands.push(normalizeCommand(obj));
@@ -30,7 +24,6 @@ function tryParseToolObject(text) {
   } catch { return null; }
 }
 
-// Greedy scan for balanced { ... } regions containing "vm-tool"
 function scanForObjects(text) {
   const out = [];
   let i = 0;
@@ -60,7 +53,7 @@ function scanForObjects(text) {
         }
       }
     }
-    if (depth !== 0) break; // malformed; stop
+    if (depth !== 0) break;
   }
   return out;
 }
@@ -73,5 +66,6 @@ function normalizeCommand(obj) {
     path:      obj.path ?? "",
     text:      obj.text ?? "",
     key:       obj.key ?? "",
+    files:     obj.files ?? [] // Extracted for task-complete
   };
 }
