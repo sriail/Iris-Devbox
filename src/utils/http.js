@@ -16,3 +16,9 @@ export function jsonError(message, status = 500) {
     headers: { "Content-Type": "application/json" },
   }));
 }
+
+// Add this new export:
+export function serveAsset(request, env) {
+  if (env.ASSETS?.fetch) return env.ASSETS.fetch(request);
+  return jsonError("Not Found", 404);
+}
