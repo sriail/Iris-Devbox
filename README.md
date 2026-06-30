@@ -3,7 +3,7 @@
 > [!NOTE]
 > Hi :), this is just a small project. I thought softwhere like github copilot where overpiced for what they where, and i wanted a similar solution,
 > but running fully in browser, as AI desktop codign apps (Like Codex) and IDE's (like Claude Code) where already a crowded space, and did not fit my
-> needs.
+> needs. If you use or like this repo, consider giving us a star!
 
 ## Quick Info
 
@@ -16,3 +16,15 @@ or a service like GH Copilot. Iris Works in an entireley difftent way. It uses V
 ## Deploy
 
 [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/sriail/Iris-Devbox)
+
+Click the Qepoly button and add your owen api key as a .env in the workers config!
+
+## Roadmap (No Particular Order)
+
+- [ ] Achive a working Prototype
+- [ ] Update PWA
+- [ ] Add Multi - Provider support
+- [ ] BYOK Support
+- [ ] Home Page
+- [ ] Sugestion Select
+- [ ] More Skills And Task Agents
