@@ -2,10 +2,8 @@ import { sessions, touchSession } from "../state/sessions.js";
 import { queryLLM } from "../services/llm.js";
 import { parseVMCommands } from "../services/parser.js";
 import { buildSystemPrompt } from "../services/prompt.js";
-import { jsonError } from "../utils/http.js";
 
-const MAX_CHAT_TURNS = 24;       // keep chatHistory bounded
-const IDLE_TTL_MS  = 1000 * 60 * 30; // 30 min
+const MAX_CHAT_TURNS = 24;
 
 export async function handleWsSession(env) {
   const [client, server] = Object.values(new WebSocketPair());
@@ -14,21 +12,10 @@ export async function handleWsSession(env) {
   const sessionId = crypto.randomUUID();
   sessions.set(sessionId, {
     ws: server,
-    files: new Map(),
+    files: new Set(), // Track file names
     chatHistory: [],
     lastActivity: Date.now(),
   });
-
-  // Sweeper: kill idle sessions
-  const sweeper = setInterval(() => {
-    const s = sessions.get(sessionId);
-    if (!s) return clearInterval(sweeper);
-    if (Date.now() - s.lastActivity > IDLE_TTL_MS) {
-      try { s.ws.close(4000, "idle timeout"); } catch {}
-      sessions.delete(sessionId);
-      clearInterval(sweeper);
-    }
-  }, 60_000);
 
   server.send(JSON.stringify({ type: "session_created", sessionId }));
 
@@ -47,7 +34,6 @@ export async function handleWsSession(env) {
   });
 
   server.addEventListener("close", () => {
-    clearInterval(sweeper);
     sessions.delete(sessionId);
   });
 
@@ -63,20 +49,30 @@ async function routeMessage(data, sessionId, env) {
       session.ws.send(JSON.stringify({ type: "boot_confirm", sessionId }));
       break;
 
+    case "file_uploaded":
+      session.files.add(data.payload.name);
+      break;
+
     case "llm_query": {
       const prompt = String(data.payload?.prompt ?? "").slice(0, 16_000);
       const vmOutput = String(data.payload?.vmOutput ?? "").slice(0, 32_000);
-      const fileList = [...session.files.keys()];
+      const fileList = [...session.files];
 
-      session.chatHistory.push({ role: "user", content: prompt });
+      // Agentic Loop Logic: 
+      // If there's a prompt, it's a new user request.
+      // If there's only vmOutput, it's an observation from the previous tool call.
+      if (prompt) {
+        session.chatHistory.push({ role: "user", content: prompt });
+      } else if (vmOutput) {
+        session.chatHistory.push({ role: "user", content: `Observation:\n${vmOutput}` });
+      } else {
+        break; // Ignore empty requests
+      }
+
       trimHistory(session);
 
-      const systemPrompt = buildSystemPrompt({ fileList, vmOutput });
-      const response = await queryLLM({
-        systemPrompt,
-        history: session.chatHistory,
-        env,
-      });
+      const systemPrompt = buildSystemPrompt({ fileList });
+      const response = await queryLLM({ systemPrompt, history: session.chatHistory, env });
 
       session.chatHistory.push({ role: "assistant", content: response });
       trimHistory(session);
@@ -88,17 +84,10 @@ async function routeMessage(data, sessionId, env) {
       }));
       break;
     }
-
-    default:
-      session.ws.send(JSON.stringify({
-        type: "error",
-        error: `Unknown message type: ${data.type}`,
-      }));
   }
 }
 
 function trimHistory(session) {
-  // Keep last N turns (1 turn = user + assistant)
   while (session.chatHistory.length > MAX_CHAT_TURNS * 2) {
     session.chatHistory.shift();
   }
