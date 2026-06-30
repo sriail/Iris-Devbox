@@ -1,4 +1,4 @@
-name = "iris-ai-vm"
+name = "iris-devbox"
 main = "src/worker.js"
 compatibility_date = "2026-06-15"
 
