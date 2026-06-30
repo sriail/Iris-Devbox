@@ -21,7 +21,7 @@ Click the Deploy button and add your own api key as a .env in the workers config
 
 ## Roadmap (No Particular Order)
 
-- [ ] Achieve a working Prototype
+- [ ] Achieve a working Prototype (DO NOW lol)
 - [ ] Update PWA
 - [ ] Add Multi - Provider support
 - [ ] BYOK Support
