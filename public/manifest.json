@@ -1,13 +1,13 @@
 {
-  "id": "/?id=pwa",
+  "id": "/",
   "name": "Iris AI (Local AI Workspace)",
   "short_name": "Iris AI",
-  "description": "A Fully local Browser-Based AI Devbox and Coding Tool, Runing on V86 insted of Docker",
+  "description": "A Local Browser-Based AI Devbox and Coding Tool, Runing on V86 insted of Docker",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#ffffff",
-  "theme_color": "#1a73e8",
+  "background_color": "#e5e7eb",
+  "theme_color": "#25e69e",
   "icons": [
     {
       "src": "/assets/icon-192x192.png",

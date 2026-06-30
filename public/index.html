@@ -3,7 +3,11 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>BETA: Iris Ai</title>
+    <title>Iris Ai</title>
+    <!-- PWA and favicon, need to add the legacy one for the memes -->
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="icon" type="image/png" href="/assets/favicon.png" />
+    <meta name="theme-color" content="#25e69e" />
     <style>
       :root {
         --w1: #ffffff;
@@ -28,8 +32,7 @@
         grid-template-columns: 1fr 6px 400px;
         background: var(--w2);
         color: var(--text-primary);
-        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
-          sans-serif;
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
         font-size: 14px;
         line-height: 1.5;
         overflow: hidden;
@@ -124,11 +127,12 @@
       }
 
       #workspace-toolbar {
-        display: flex;
+        display: none; /* Hidden by default, shown when files exist */
         justify-content: space-between;
         align-items: center;
         padding-bottom: 12px;
         border-bottom: 1px solid var(--w3);
+        margin-bottom: 16px;
       }
 
       #workspace-toolbar h3 {
@@ -198,6 +202,7 @@
       .file-actions {
         display: flex;
         gap: 4px;
+        margin-left: auto;
         opacity: 0;
         transition: opacity 0.2s;
       }
@@ -220,10 +225,6 @@
       }
       .file-action-btn:hover {
         background: rgba(0, 0, 0, 0.1);
-      }
-      .file-action-btn.delete:hover .ic {
-        filter: brightness(0) saturate(100%) invert(40%) sepia(93%)
-          saturate(7434%) hue-rotate(354deg) brightness(99%) contrast(95%);
       }
 
       .tree-children {
@@ -417,63 +418,6 @@
         border-bottom-left-radius: 4px;
       }
 
-      .message-content.markdown > *:first-child {
-        margin-top: 0;
-      }
-      .message-content.markdown > *:last-child {
-        margin-bottom: 0;
-      }
-      .message-content.markdown p {
-        margin: 0 0 8px;
-      }
-      .message-content.markdown h1,
-      .message-content.markdown h2,
-      .message-content.markdown h3 {
-        margin: 12px 0 8px;
-        font-weight: 600;
-      }
-      .message-content.markdown h1 {
-        font-size: 1.4em;
-      }
-      .message-content.markdown h2 {
-        font-size: 1.2em;
-      }
-      .message-content.markdown h3 {
-        font-size: 1.1em;
-      }
-      .message-content.markdown ul,
-      .message-content.markdown ol {
-        margin: 0 0 8px;
-        padding-left: 20px;
-      }
-      .message-content.markdown li {
-        margin: 4px 0;
-      }
-      .message-content.markdown code {
-        background: var(--w3);
-        padding: 2px 6px;
-        border-radius: 4px;
-        font-family: "SF Mono", Monaco, monospace;
-        font-size: 0.9em;
-      }
-      .message-content.markdown pre {
-        background: #1e1e1e;
-        color: #d4d4d4;
-        padding: 12px;
-        border-radius: 8px;
-        overflow-x: auto;
-        margin: 0 0 8px;
-      }
-      .message-content.markdown pre code {
-        background: transparent;
-        padding: 0;
-        font-size: 13px;
-      }
-      .message-content.markdown a {
-        color: var(--accent);
-        text-decoration: underline;
-      }
-
       .chat-message.system .message-content {
         background: transparent;
         color: var(--text-secondary);
@@ -518,43 +462,6 @@
         background: var(--w1);
         border: 1px solid var(--w3);
         color: var(--text-primary);
-      }
-
-      .chat-message.llm .message-attachment-chip {
-        background: var(--w2);
-        border: 1px solid var(--w3);
-        color: var(--text-primary);
-      }
-
-      .message-actions {
-        display: flex;
-        gap: 8px;
-        margin-top: 6px;
-        padding: 0 4px;
-      }
-
-      .action-btn {
-        background: transparent;
-        border: none;
-        color: var(--text-secondary);
-        font-size: 11px;
-        font-weight: 600;
-        cursor: pointer;
-        padding: 4px 8px;
-        border-radius: 4px;
-        transition: all 0.2s;
-        flex: none;
-        display: flex;
-        align-items: center;
-        gap: 4px;
-      }
-      .action-btn:hover {
-        background: rgba(0, 0, 0, 0.05);
-        color: var(--accent);
-      }
-      .action-btn:hover .ic {
-        filter: brightness(0) saturate(100%) invert(72%) sepia(49%)
-          saturate(389%) hue-rotate(107deg) brightness(95%) contrast(92%);
       }
 
       #controls {
@@ -746,56 +653,17 @@
       }
 
       .ic-gray {
-        filter: brightness(0) saturate(100%) invert(60%) sepia(0%) saturate(0%)
-          hue-rotate(0deg) brightness(100%) contrast(100%);
+        filter: brightness(0) saturate(100%) invert(60%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%);
         opacity: 0.8;
-      }
-      .ic-black {
-        filter: brightness(0) saturate(100%);
       }
       .ic-white {
         filter: brightness(0) invert(1);
       }
       .ic-accent {
-        filter: invert(80%) sepia(44%) saturate(402%) hue-rotate(107deg)
-          brightness(102%) contrast(92%);
+        filter: invert(80%) sepia(44%) saturate(402%) hue-rotate(107deg) brightness(102%) contrast(92%);
       }
       .ic-danger {
-        filter: brightness(0) saturate(100%) invert(40%) sepia(93%)
-          saturate(7434%) hue-rotate(354deg) brightness(99%) contrast(95%);
-      }
-      .ic-success {
-        filter: invert(64%) sepia(87%) saturate(385%) hue-rotate(116deg)
-          brightness(95%) contrast(85%);
-      }
-
-      button:hover .ic-black {
-        filter: brightness(0) invert(1);
-        opacity: 1;
-      }
-      button.secondary:hover .ic-gray {
-        filter: brightness(0) saturate(100%);
-        opacity: 1;
-      }
-      .tab-btn:hover .ic-gray {
-        filter: brightness(0) saturate(100%);
-        opacity: 1;
-      }
-      .tab-btn.active .ic-gray {
-        filter: brightness(0) invert(1);
-        opacity: 1;
-      }
-      .mini-btn:hover .ic-gray {
-        filter: brightness(0) saturate(100%);
-        opacity: 1;
-      }
-      .tree-header:hover .ic-gray {
-        filter: brightness(0) saturate(100%);
-        opacity: 1;
-      }
-      .file-action-btn:hover .ic-gray {
-        filter: brightness(0) saturate(100%);
-        opacity: 1;
+        filter: brightness(0) saturate(100%) invert(40%) sepia(93%) saturate(7434%) hue-rotate(354deg) brightness(99%) contrast(95%);
       }
 
       ::-webkit-scrollbar {
@@ -859,24 +727,16 @@
       </div>
 
       <div id="workspace-container" class="view-content">
-        <div id="workspace-toolbar" style="display: none">
+        <div id="workspace-toolbar">
           <h3>
             <img src="/assets/folder.svg" class="ic ic-accent" />
             Workspace Files
           </h3>
-          <button class="mini-btn" id="download-zip-btn">
-            <img src="/assets/download.svg" class="ic sm ic-gray" />
-            Download .zip
-          </button>
         </div>
         <div id="workspace-empty">
           <img src="/assets/folder.svg" class="ic lg ic-gray" />
-          <div style="font-weight: 600; margin-bottom: 4px">
-            No files in workspace
-          </div>
-          <div style="font-size: 13px">
-            Files generated by the LLM will appear here.
-          </div>
+          <div style="font-weight: 600; margin-bottom: 4px">No files generated</div>
+          <div style="font-size: 13px">Files created by the AI will appear here.</div>
         </div>
         <div class="file-tree" id="workspace-tree"></div>
       </div>
@@ -900,11 +760,7 @@
 
       <div id="controls">
         <div id="attachments-container"></div>
-        <textarea
-          id="prompt"
-          placeholder="Ask the LLM to do something..."
-          rows="1"
-        ></textarea>
+        <textarea id="prompt" placeholder="Ask the AI to build something..." rows="1"></textarea>
         <div class="button-group">
           <button id="send">
             <img src="/assets/send.svg" class="ic sm ic-white" />
@@ -918,33 +774,14 @@
             <img src="/assets/folder.svg" class="ic sm ic-gray" />
             Folder
           </button>
-          <label class="toggle-label">
-            <input type="checkbox" id="thinking-toggle" />
-            <span class="toggle-switch"></span>
-            <img src="/assets/brain.svg" class="ic sm ic-gray" />
-            Think
-          </label>
-          <label class="toggle-label">
-            <input type="checkbox" id="quiet-toggle" checked />
-            <span class="toggle-switch"></span>
-            <img src="/assets/brain.svg" class="ic sm ic-gray" />
-            Quiet
-          </label>
         </div>
         <input type="file" id="file" multiple />
-        <input
-          type="file"
-          id="file-folder"
-          webkitdirectory
-          directory
-          multiple
-        />
+        <input type="file" id="file-folder" webkitdirectory directory multiple />
       </div>
     </div>
 
     <!-- Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
     <script src="/v86/libv86.js"></script>
     
     <script>
@@ -953,17 +790,9 @@
       let emulator = null;
       let sessionId = null;
       let vmBooted = false;
-      let vmReady = false;
       let serialBuffer = "";
-      let commandQueue = [];
       let isProcessing = false;
       let pendingAttachments = [];
-      let thinkingModeEnabled = false;
-      let quietModeEnabled = true;
-      let workspaceFiles = [];
-
-      const MAX_FILE_SIZE = 50 * 1024 * 1024;
-      const MAX_FOLDER_SIZE = 300 * 1024 * 1024;
 
       // --- DOM Element Selection ---
       const sessionEl = document.getElementById("session");
@@ -973,19 +802,13 @@
       const folderInput = document.getElementById("file-folder");
       const screen = document.getElementById("screen");
       const chatEl = document.getElementById("chat");
-      const attachmentsContainer = document.getElementById(
-        "attachments-container"
-      );
-      const thinkingToggle = document.getElementById("thinking-toggle");
-      const quietToggle = document.getElementById("quiet-toggle");
+      const attachmentsContainer = document.getElementById("attachments-container");
       const uploadFileBtn = document.getElementById("upload-file-btn");
       const uploadFolderBtn = document.getElementById("upload-folder-btn");
       const clearChatBtn = document.getElementById("clear-chat-btn");
 
       // --- UI Display Helpers ---
       function addChatMessage(role, content, label = null, isError = false) {
-        if (quietModeEnabled && role === "system" && !isError) return null;
-
         const msgDiv = document.createElement("div");
         msgDiv.className = `chat-message ${role}`;
         if (isError) msgDiv.classList.add("error");
@@ -994,15 +817,9 @@
           const labelEl = document.createElement("div");
           labelEl.className = "message-label";
           let icon = "";
-          if (role === "user")
-            icon = '<img src="/assets/user.svg" class="ic sm ic-gray" />';
-          if (role === "llm")
-            icon = '<img src="/assets/brain.svg" class="ic sm ic-gray" />';
-          if (role === "system")
-            icon = `<img src="/assets/${
-              isError ? "x" : "server-2"
-            }.svg" class="ic sm ${isError ? "ic-danger" : "ic-gray"}" />`;
-
+          if (role === "user") icon = '<img src="/assets/user.svg" class="ic sm ic-gray" />';
+          if (role === "llm") icon = '<img src="/assets/brain.svg" class="ic sm ic-gray" />';
+          if (role === "system") icon = `<img src="/assets/${isError ? "x" : "server-2"}.svg" class="ic sm ${isError ? "ic-danger" : "ic-gray"}" />`;
           labelEl.innerHTML = `${icon} ${label}`;
           msgDiv.appendChild(labelEl);
         }
@@ -1020,367 +837,15 @@
         msgDiv.appendChild(contentDiv);
         chatEl.appendChild(msgDiv);
         chatEl.scrollTop = chatEl.scrollHeight;
-
-        if (role === "user" && !isError) {
-          const actionsDiv = document.createElement("div");
-          actionsDiv.className = "message-actions";
-
-          const copyBtn = document.createElement("button");
-          copyBtn.className = "action-btn";
-          copyBtn.innerHTML = `<img src="/assets/clipboard.svg" class="ic sm ic-gray" /> Copy`;
-          copyBtn.addEventListener("click", () => {
-            navigator.clipboard.writeText(content);
-            copyBtn.innerHTML = `<img src="/assets/clipboard-check.svg" class="ic sm ic-success" /> Copied!`;
-            setTimeout(
-              () =>
-                (copyBtn.innerHTML = `<img src="/assets/clipboard.svg" class="ic sm ic-gray" /> Copy`),
-              1500
-            );
-          });
-
-          const regenBtn = document.createElement("button");
-          regenBtn.className = "action-btn";
-          regenBtn.innerHTML = `<img src="/assets/refresh.svg" class="ic sm ic-gray" /> Regenerate`;
-          regenBtn.addEventListener("click", () => {
-            if (ws && ws.readyState === WebSocket.OPEN) {
-              ws.send(
-                JSON.stringify({
-                  type: "user_prompt",
-                  payload: {
-                    prompt: content,
-                    attachments: [],
-                    thinking: thinkingModeEnabled,
-                    regenerate: true,
-                  },
-                })
-              );
-              addChatMessage("system", "Regenerating response...", "System");
-            } else {
-              addChatMessage(
-                "system",
-                "Cannot regenerate: Server connection is down, try Reloading",
-                "System",
-                true
-              );
-            }
-          });
-
-          actionsDiv.appendChild(copyBtn);
-          actionsDiv.appendChild(regenBtn);
-          msgDiv.appendChild(actionsDiv);
-        }
-
         return msgDiv;
       }
-
-      function addCommandOutput(cmd) {
-        if (quietModeEnabled) return;
-        const msgDiv = document.createElement("div");
-        msgDiv.className = "chat-message llm";
-        msgDiv.innerHTML = `<div class="message-label"><img src="/assets/terminal-2.svg" class="ic sm ic-gray" /> Command: ${
-          cmd.tool || "Shell"
-        }</div>`;
-
-        if (cmd.reasoning) {
-          const reasoningDiv = document.createElement("div");
-          reasoningDiv.className = "cmd-block";
-          reasoningDiv.style.display = "flex";
-          reasoningDiv.style.alignItems = "flex-start";
-          reasoningDiv.style.gap = "8px";
-          reasoningDiv.innerHTML = `<img src="/assets/brain.svg" class="ic sm ic-accent" style="margin-top: 2px; flex-shrink: 0;" /><span>${cmd.reasoning}</span>`;
-          msgDiv.appendChild(reasoningDiv);
-        }
-        if (cmd.command) {
-          const cmdDiv = document.createElement("div");
-          cmdDiv.className = "cmd-block";
-          cmdDiv.textContent = `$ ${cmd.command}`;
-          msgDiv.appendChild(cmdDiv);
-        }
-        chatEl.appendChild(msgDiv);
-        chatEl.scrollTop = chatEl.scrollHeight;
-      }
-
-      function addCommandResult(cmd, output) {
-        if (quietModeEnabled) return;
-        const msgDiv = document.createElement("div");
-        msgDiv.className = "chat-message llm";
-        msgDiv.innerHTML = `<div class="message-label"><img src="/assets/terminal-2.svg" class="ic sm ic-gray" /> Output</div>`;
-        const outputDiv = document.createElement("div");
-        outputDiv.className = "cmd-block output";
-        outputDiv.textContent = output;
-        msgDiv.appendChild(outputDiv);
-        chatEl.appendChild(msgDiv);
-        chatEl.scrollTop = chatEl.scrollHeight;
-      }
-
-      // --- Workspace File Tree & Editor ---
-      function buildTree(paths) {
-        const root = {};
-        paths.forEach((path) => {
-          const parts = path.split("/");
-          let curr = root;
-          parts.forEach((part, i) => {
-            if (!curr[part]) curr[part] = i === parts.length - 1 ? null : {};
-            if (curr[part] !== null) curr = curr[part];
-          });
-        });
-        return root;
-      }
-
-      function renderTree(treeObj, container, currentPath = "") {
-        container.innerHTML = "";
-        Object.keys(treeObj)
-          .sort()
-          .forEach((key) => {
-            const val = treeObj[key];
-            const isFile = val === null;
-            const fullPath = currentPath ? `${currentPath}/${key}` : key;
-
-            const item = document.createElement("div");
-            item.className = "tree-item";
-
-            const header = document.createElement("div");
-            header.className = "tree-header";
-            header.innerHTML = `
-      <span class="chevron">${isFile ? "" : "▶"}</span>
-      <img src="${
-        isFile ? "/assets/file-diff.svg" : "/assets/folder.svg"
-      }" class="ic sm ic-gray" />
-      <span class="name">${key}</span>
-    `;
-
-            if (isFile) {
-              const actions = document.createElement("div");
-              actions.className = "file-actions";
-              actions.innerHTML = `
-        <button class="file-action-btn" title="Download"><img src="/assets/download.svg" class="ic sm ic-gray" /></button>
-        <button class="file-action-btn delete" title="Delete"><img src="/assets/x.svg" class="ic sm ic-gray" /></button>
-      `;
-              actions
-                .querySelector('[title="Download"]')
-                .addEventListener("click", (e) => {
-                  e.stopPropagation();
-                  downloadFile(fullPath);
-                });
-              actions
-                .querySelector('[title="Delete"]')
-                .addEventListener("click", (e) => {
-                  e.stopPropagation();
-                  deleteFile(fullPath);
-                });
-              header.appendChild(actions);
-            }
-            item.appendChild(header);
-
-            if (!isFile) {
-              const children = document.createElement("div");
-              children.className = "tree-children";
-              renderTree(val, children, fullPath);
-              item.appendChild(children);
-
-              header.addEventListener("click", () => {
-                header.classList.toggle("expanded");
-                children.classList.toggle("expanded");
-              });
-            } else {
-              header.addEventListener("click", () =>
-                openEditor(item, fullPath, key)
-              );
-            }
-            container.appendChild(item);
-          });
-      }
-
-      async function openEditor(item, filePath, fileName) {
-        document
-          .querySelectorAll(".file-editor.active")
-          .forEach((el) => el.remove());
-
-        const editorDiv = document.createElement("div");
-        editorDiv.className = "file-editor active";
-        editorDiv.innerHTML = `
-    <div class="editor-header">
-      <span>${fileName}</span>
-      <button class="save-btn">Save</button>
-    </div>
-    <textarea class="editor-textarea" placeholder="Loading..."></textarea>
-  `;
-        item.appendChild(editorDiv);
-
-        const textarea = editorDiv.querySelector("textarea");
-        const saveBtn = editorDiv.querySelector(".save-btn");
-
-        try {
-          const res = await fetch(
-            `/workspace-file?sid=${sessionId}&path=${encodeURIComponent(
-              filePath
-            )}`
-          );
-          if (res.ok) {
-            textarea.value = await res.text();
-          } else {
-            textarea.value = `// Could not load file: ${res.statusText}`;
-          }
-        } catch (e) {
-          textarea.value = `// Error loading file: ${e.message}`;
-        }
-
-        saveBtn.addEventListener("click", async () => {
-          saveBtn.textContent = "Saving...";
-          saveBtn.disabled = true;
-
-          const blob = new Blob([textarea.value], { type: "text/plain" });
-          const file = new File([blob], fileName);
-          const formData = new FormData();
-          formData.append("file", file);
-          formData.append("relativePath", filePath);
-
-          try {
-            const res = await fetch(`/upload?sid=${sessionId}`, {
-              method: "POST",
-              body: formData,
-            });
-            if (res.ok) {
-              saveBtn.textContent = "Saved!";
-              setTimeout(() => {
-                saveBtn.textContent = "Save";
-                saveBtn.disabled = false;
-              }, 1500);
-            } else {
-              throw new Error("Server rejected save");
-            }
-          } catch (e) {
-            addChatMessage(
-              "system",
-              `Error saving ${fileName}: ${e.message}, try Reloading`,
-              "System",
-              true
-            );
-            saveBtn.textContent = "Error";
-            setTimeout(() => {
-              saveBtn.textContent = "Save";
-              saveBtn.disabled = false;
-            }, 1500);
-          }
-        });
-      }
-
-      async function downloadFile(filePath) {
-        try {
-          const res = await fetch(
-            `/workspace-file?sid=${sessionId}&path=${encodeURIComponent(
-              filePath
-            )}`
-          );
-          if (!res.ok) throw new Error("Download failed");
-          const blob = await res.blob();
-          const link = document.createElement("a");
-          link.href = URL.createObjectURL(blob);
-          link.download = filePath.split("/").pop();
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          URL.revokeObjectURL(link.href);
-        } catch (e) {
-          addChatMessage(
-            "system",
-            `Error downloading ${filePath}: ${e.message}, try Reloading`,
-            "System",
-            true
-          );
-        }
-      }
-
-      async function deleteFile(filePath) {
-        try {
-          const res = await fetch(
-            `/delete-file?sid=${sessionId}&path=${encodeURIComponent(
-              filePath
-            )}`,
-            { method: "DELETE" }
-          );
-          if (res.ok) {
-            workspaceFiles = workspaceFiles.filter((f) => f !== filePath);
-            renderWorkspaceFiles(workspaceFiles);
-          } else {
-            throw new Error("Delete failed");
-          }
-        } catch (e) {
-          addChatMessage(
-            "system",
-            `Error deleting ${filePath}: ${e.message}, try Reloading`,
-            "System",
-            true
-          );
-        }
-      }
-
-      async function downloadWorkspaceZip() {
-        if (workspaceFiles.length === 0) return;
-        addChatMessage("system", "Zipping workspace...", "System");
-        try {
-          const zip = new JSZip();
-          for (const path of workspaceFiles) {
-            const res = await fetch(
-              `/workspace-file?sid=${sessionId}&path=${encodeURIComponent(
-                path
-              )}`
-            );
-            if (res.ok) {
-              const blob = await res.blob();
-              zip.file(path, blob);
-            }
-          }
-          const content = await zip.generateAsync({ type: "blob" });
-          const link = document.createElement("a");
-          link.href = URL.createObjectURL(content);
-          link.download = "workspace.zip";
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          URL.revokeObjectURL(link.href);
-        } catch (e) {
-          addChatMessage(
-            "system",
-            `Error zipping workspace: ${e.message}, try Reloading`,
-            "System",
-            true
-          );
-        }
-      }
-
-      function renderWorkspaceFiles(files) {
-        workspaceFiles = files || [];
-        const emptyState = document.getElementById("workspace-empty");
-        const tree = document.getElementById("workspace-tree");
-        const toolbar = document.getElementById("workspace-toolbar");
-
-        if (workspaceFiles.length > 0) {
-          emptyState.style.display = "none";
-          toolbar.style.display = "flex";
-          const treeObj = buildTree(workspaceFiles);
-          renderTree(treeObj, tree);
-          document.querySelector('.tab-btn[data-view="workspace"]').click();
-        } else {
-          emptyState.style.display = "flex";
-          toolbar.style.display = "none";
-          tree.innerHTML = "";
-        }
-      }
-
-      document
-        .getElementById("download-zip-btn")
-        .addEventListener("click", downloadWorkspaceZip);
 
       function renderAttachments() {
         attachmentsContainer.innerHTML = "";
         pendingAttachments.forEach((item, index) => {
           const chip = document.createElement("div");
           chip.className = "attachment-chip";
-          chip.innerHTML = `<img src="${
-            item.isFolder ? "/assets/folder.svg" : "/assets/file-diff.svg"
-          }" class="ic sm ic-gray" /><span>${item.name}</span>`;
-
+          chip.innerHTML = `<img src="${item.isFolder ? "/assets/folder.svg" : "/assets/file-diff.svg"}" class="ic sm ic-gray" /><span>${item.name}</span>`;
           const removeBtn = document.createElement("button");
           removeBtn.className = "chip-remove";
           removeBtn.innerHTML = `<img src="/assets/x.svg" class="ic sm ic-gray" />`;
@@ -1397,34 +862,19 @@
         if (!items || items.length === 0) return;
         const attachmentsDiv = document.createElement("div");
         attachmentsDiv.className = "message-attachments";
-
         items.forEach((item) => {
           const chip = document.createElement("div");
           chip.className = "message-attachment-chip";
-          chip.innerHTML = `<img src="${
-            item.isFolder ? "/assets/folder.svg" : "/assets/file-diff.svg"
-          }" class="ic sm ic-gray" /><span>${item.name}</span>`;
+          chip.innerHTML = `<img src="${item.isFolder ? "/assets/folder.svg" : "/assets/file-diff.svg"}" class="ic sm ic-gray" /><span>${item.name}</span>`;
           attachmentsDiv.appendChild(chip);
         });
         msgEl.appendChild(attachmentsDiv);
       }
 
       // --- Adaptive V86 Emulator Engine Initialization ---
-      async function initV86Emulator(customDiskPath = null) {
-        let StarterConstructor = window.V86 || window.V86Starter;
-        if (!StarterConstructor) {
-          addChatMessage(
-            "system",
-            "V86 Engine binding missing, try Clearing cache",
-            "System",
-            true
-          );
-          return;
-        }
+      async function initV86Emulator() {
         if (emulator) {
-          try {
-            emulator.destroy();
-          } catch (e) {}
+          try { emulator.destroy(); } catch (e) {}
         }
 
         try {
@@ -1443,65 +893,36 @@
             }
           };
 
-          if (customDiskPath) {
-            if (customDiskPath.endsWith(".iso")) {
-              config.cdrom = { url: customDiskPath };
-            } else {
-              config.hda = { url: customDiskPath };
-            }
-          } else {
-            addChatMessage(
-              "system",
-              "Downloading Iris VM image, hang Tight...",
-              "System"
-            );
-            
-            // v86 natively streams and decompresses .zst files! 
-            // We append /disk.img.zst to the proxy URL so v86's internal logic detects the format.
-            config.hda = { 
-              url: "/api/proxy-vm-image/disk.img.zst" 
-            };
-            
-            addChatMessage("system", "Booting VM...", "System");
-          }
-
+          addChatMessage("system", "Downloading Iris VM image...", "System");
+          config.hda = { url: "/api/proxy-vm-image/disk.img.zst" };
+          
+          const StarterConstructor = window.V86 || window.V86Starter;
           emulator = new StarterConstructor(config);
-          vmBooted = true;
-          if (sessionId && sessionEl)
-            sessionEl.textContent = sessionId.slice(0, 8);
-          monitorSerialPort();
+          
+          emulator.add_listener("serial0-output-char", (char) => {
+            serialBuffer += char;
+            if (serialBuffer.includes("#") || serialBuffer.includes("$")) {
+              if (!vmBooted) {
+                vmBooted = true;
+                addChatMessage("system", "VM ready - ttyS0 responding", "System");
+              }
+            }
+          });
         } catch (error) {
-          addChatMessage(
-            "system",
-            `StartVM Failure: ${error.message}, try Clearing cache or Reloading`,
-            "System",
-            true
-          );
+          addChatMessage("system", `StartVM Failure: ${error.message}`, "System", true);
         }
       }
 
-      function monitorSerialPort() {
-        if (!emulator) return;
-        emulator.add_listener("serial0-output-char", (char) => {
-          serialBuffer += char;
-          if (serialBuffer.includes("#") || serialBuffer.includes("$")) {
-            vmReady = true;
-            if (vmBooted && serialBuffer.length > 2) {
-              addChatMessage("system", "VM ready - ttyS0 responding", "System");
-              vmBooted = false;
-            }
-          }
-        });
-      }
-
+      // --- VM Tool Execution (Agentic Loop) ---
       async function executeCommand(cmd) {
-        if (!emulator) return "";
+        if (!emulator) return "VM not ready";
         emulator.serial0_send(cmd + "\n");
         return new Promise((resolve) => {
           let output = "";
           let timeout = setTimeout(() => resolve(output), 2000);
           const listener = (char) => {
             output += char;
+            serialBuffer = output; // keep global buffer updated
             clearTimeout(timeout);
             timeout = setTimeout(() => {
               emulator.remove_listener("serial0-output-char", listener);
@@ -1512,73 +933,170 @@
         });
       }
 
-      async function processQueueItem(item) {
-        isProcessing = true;
-        try {
-          addCommandOutput(item.cmd);
-          
-          // Handle different tool types
-          if (item.cmd.tool === "command-tool" && item.cmd.command) {
-            const output = await executeCommand(item.cmd.command);
-            addCommandResult(item.cmd, output);
-            serialBuffer = output;
-          } 
-          else if (item.cmd.tool === "send-text" && item.cmd.text) {
-            emulator.serial0_send(item.cmd.text);
-            await new Promise(r => setTimeout(r, 500));
-          } 
-          else if (item.cmd.tool === "send-keypress" && item.cmd.key) {
-            const keys = item.cmd.key.split(",").map(k => k.trim());
-            const ctrl = keys.includes("Ctrl");
-            const alt = keys.includes("Alt");
-            const shift = keys.includes("Shift");
-            const mainKey = keys.find(k => !["Ctrl", "Alt", "Shift"].includes(k));
-            
-            if (mainKey) {
-              let char = mainKey.toLowerCase();
-              if (ctrl) {
-                if (char === 'c') emulator.serial0_send("\x03");
-                else if (char === 'd') emulator.serial0_send("\x04");
-                else if (char === 'z') emulator.serial0_send("\x1A");
-                else if (char === 'l') emulator.serial0_send("\x0C");
-              } else {
-                emulator.serial0_send(mainKey);
-              }
+      async function handleLlmResponse(msg) {
+        addChatMessage("llm", msg.response, "Assistant");
+        
+        for (const cmd of msg.commands) {
+          if (cmd.tool === "task-complete") {
+            await presentFiles(cmd.files);
+            addChatMessage("system", "✅ Task complete. Files are available in the Workspace tab.", "System");
+            isProcessing = false;
+            updateUI();
+            return;
+          }
+
+          let output = null;
+          try {
+            switch (cmd.tool) {
+              case "command-tool": output = await executeCommand(cmd.command); break;
+              case "list-files": output = await executeCommand(`ls -la ${cmd.path || "."}`); break;
+              case "read-file": output = await executeCommand(`cat ${cmd.path}`); break;
+              case "view-console": output = serialBuffer; break;
             }
-            await new Promise(r => setTimeout(r, 300));
-          } 
-          else if (item.cmd.tool === "list-files" && item.cmd.path) {
-            const output = await executeCommand(`ls -la ${item.cmd.path}`);
-            addCommandResult(item.cmd, output);
-            serialBuffer = output;
-          } 
-          else if (item.cmd.tool === "view-console") {
-            addCommandResult(item.cmd, serialBuffer);
+          } catch (e) {
+            output = `Error: ${e.message}`;
           }
-          
-          if (ws && ws.readyState === WebSocket.OPEN) {
-            ws.send(
-              JSON.stringify({
+
+          if (output !== null) {
+            addChatMessage("system", `⚙️ Executed: ${cmd.command || cmd.path || cmd.tool}`, "System");
+            if (ws && ws.readyState === WebSocket.OPEN) {
+              ws.send(JSON.stringify({
                 type: "llm_query",
-                payload: {
-                  prompt: `VM Output:\n${serialBuffer}\n\nWhat should I do next?`,
-                  vmOutput: serialBuffer,
-                },
-              })
-            );
+                payload: { vmOutput: String(output).slice(0, 4000) }
+              }));
+            }
+            return; // Wait for LLM to respond to observation
           }
+        }
+        isProcessing = false;
+        updateUI();
+      }
+
+      // --- Workspace File Tree & Editor ---
+      function buildTree(paths) {
+        const root = {};
+        paths.forEach((path) => {
+          const parts = path.split("/");
+          let curr = root;
+          parts.forEach((part, i) => {
+            if (!curr[part]) curr[part] = i === parts.length - 1 ? null : {};
+            if (curr[part] !== null) curr = curr[part];
+          });
+        });
+        return root;
+      }
+
+      function renderTree(treeObj, container, currentPath = "") {
+        container.innerHTML = "";
+        Object.keys(treeObj).sort().forEach((key) => {
+          const val = treeObj[key];
+          const isFile = val === null;
+          const fullPath = currentPath ? `${currentPath}/${key}` : key;
+
+          const item = document.createElement("div");
+          item.className = "tree-item";
+
+          const header = document.createElement("div");
+          header.className = "tree-header";
+          header.innerHTML = `
+            <span class="chevron">${isFile ? "" : "▶"}</span>
+            <img src="${isFile ? "/assets/file-diff.svg" : "/assets/folder.svg"}" class="ic sm ic-gray" />
+            <span class="name">${key}</span>
+          `;
+
+          if (isFile) {
+            const actions = document.createElement("div");
+            actions.className = "file-actions";
+            actions.innerHTML = `
+              <button class="file-action-btn" title="Download"><img src="/assets/download.svg" class="ic sm ic-gray" /></button>
+            `;
+            actions.querySelector('[title="Download"]').addEventListener("click", (e) => {
+              e.stopPropagation();
+              downloadFile(fullPath);
+            });
+            header.appendChild(actions);
+          }
+          item.appendChild(header);
+
+          if (!isFile) {
+            const children = document.createElement("div");
+            children.className = "tree-children";
+            renderTree(val, children, fullPath);
+            item.appendChild(children);
+            header.addEventListener("click", () => {
+              header.classList.toggle("expanded");
+              children.classList.toggle("expanded");
+            });
+          } else {
+            header.addEventListener("click", () => openEditor(item, fullPath, key));
+          }
+          container.appendChild(item);
+        });
+      }
+
+      async function openEditor(item, filePath, fileName) {
+        document.querySelectorAll(".file-editor.active").forEach(el => el.remove());
+        const editorDiv = document.createElement("div");
+        editorDiv.className = "file-editor active";
+        editorDiv.innerHTML = `
+          <div class="editor-header">
+            <span>${fileName}</span>
+            <button class="save-btn">Save</button>
+          </div>
+          <textarea class="editor-textarea" placeholder="Loading from VM..."></textarea>
+        `;
+        item.appendChild(editorDiv);
+        
+        const textarea = editorDiv.querySelector("textarea");
+        const saveBtn = editorDiv.querySelector(".save-btn");
+        
+        // Read from VM directly
+        const content = await executeCommand(`cat ${filePath}`);
+        textarea.value = content;
+        
+        // Save back to VM
+        saveBtn.addEventListener("click", async () => {
+          saveBtn.textContent = "Saving...";
+          saveBtn.disabled = true;
+          const script = `cat << 'EOF' > ${filePath}\n${textarea.value}\nEOF\n`;
+          emulator.serial0_send(script);
+          setTimeout(() => {
+            saveBtn.textContent = "Saved!";
+            setTimeout(() => { saveBtn.textContent = "Save"; saveBtn.disabled = false; }, 1500);
+          }, 1000);
+        });
+      }
+
+      async function downloadFile(filePath) {
+        try {
+          const content = await executeCommand(`cat ${filePath}`);
+          const blob = new Blob([content], { type: "text/plain" });
+          const link = document.createElement("a");
+          link.href = URL.createObjectURL(blob);
+          link.download = filePath.split("/").pop();
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
         } catch (e) {
-          addChatMessage(
-            "system",
-            `Queue Error: ${e.message}, try Re-Sending`,
-            "System",
-            true
-          );
-        } finally {
-          isProcessing = false;
-          if (commandQueue.length > 0) {
-            setTimeout(() => processQueueItem(commandQueue.shift()), 500);
-          }
+          addChatMessage("system", `Error downloading ${filePath}`, "System", true);
+        }
+      }
+
+      async function presentFiles(files) {
+        const emptyState = document.getElementById("workspace-empty");
+        const tree = document.getElementById("workspace-tree");
+        const toolbar = document.getElementById("workspace-toolbar");
+
+        if (files && files.length > 0) {
+          emptyState.style.display = "none";
+          toolbar.style.display = "flex";
+          const treeObj = buildTree(files);
+          renderTree(treeObj, tree);
+          document.querySelector('.tab-btn[data-view="workspace"]').click();
+        } else {
+          emptyState.style.display = "flex";
+          toolbar.style.display = "none";
+          tree.innerHTML = "";
         }
       }
 
@@ -1592,7 +1110,7 @@
           switch (msg.type) {
             case "session_created":
               sessionId = msg.sessionId;
-              if (sessionEl) sessionEl.textContent = sessionId.slice(0, 8);
+              sessionEl.textContent = sessionId.slice(0, 8);
               addChatMessage("system", "Session started", "System");
               initV86Emulator();
               break;
@@ -1601,93 +1119,31 @@
               addChatMessage("system", "VM booting...", "System");
               break;
             case "llm_response":
-              addChatMessage("llm", msg.response, "Assistant");
-              if (msg.commands && msg.commands.length > 0) {
-                msg.commands.forEach((cmd) => {
-                  if (!isProcessing) {
-                    commandQueue.push({ cmd });
-                    processQueueItem(commandQueue.shift());
-                  } else {
-                    commandQueue.push({ cmd });
-                  }
-                });
-              }
+              handleLlmResponse(msg);
               break;
-            case "command_executed":
-              addCommandResult(msg.command, msg.output);
-              break;
-            case "files_exported":
-              renderWorkspaceFiles(msg.files);
-              break;
-            case "file_list":
-              if (msg.files.length > 0) renderWorkspaceFiles(msg.files);
+            case "error":
+              addChatMessage("system", msg.error, "System", true);
+              isProcessing = false;
+              updateUI();
               break;
           }
         });
 
         ws.addEventListener("close", () => {
-          addChatMessage(
-            "system",
-            "Disconnected. Reconnecting to Server...",
-            "System",
-            true
-          );
+          addChatMessage("system", "Disconnected. Reconnecting...", "System", true);
           setTimeout(connect, 3000);
         });
       }
 
-      // --- Client Input Handlers & Interactivity ---
+      // --- Client Input Handlers ---
       function handleFilesSelected(files, isFolder) {
-        if (isFolder) {
-          const folderMap = {};
-          let totalSize = 0;
-
-          for (const file of files) {
-            totalSize += file.size;
-            const rootFolder = file.webkitRelativePath.split("/")[0];
-            if (!folderMap[rootFolder]) {
-              folderMap[rootFolder] = {
-                name: rootFolder,
-                isFolder: true,
-                files: [],
-                size: 0,
-              };
-            }
-            folderMap[rootFolder].files.push(file);
-            folderMap[rootFolder].size += file.size;
-          }
-
-          if (totalSize > MAX_FOLDER_SIZE) {
-            addChatMessage(
-              "system",
-              `Folder exceeds 300MB limit`,
-              "System",
-              true
-            );
-            return;
-          }
-
-          for (const folderName in folderMap) {
-            pendingAttachments.push(folderMap[folderName]);
-          }
-        } else {
-          for (const file of files) {
-            if (file.size > MAX_FILE_SIZE) {
-              addChatMessage(
-                "system",
-                `File "${file.name}" exceeds 50MB limit`,
-                "System",
-                true
-              );
-              continue;
-            }
-            pendingAttachments.push({
-              name: file.name,
-              isFolder: false,
-              files: [file],
-              size: file.size,
-            });
-          }
+        for (const file of files) {
+          pendingAttachments.push({
+            name: isFolder ? file.webkitRelativePath : file.name,
+            isFolder: false,
+            files: [file],
+            size: file.size,
+          });
         }
         renderAttachments();
       }
@@ -1701,102 +1157,66 @@
         e.target.value = "";
       });
 
+      function updateUI() {
+        sendBtn.disabled = isProcessing;
+        promptEl.disabled = isProcessing;
+        if (isProcessing) {
+          sendBtn.textContent = "Working...";
+        } else {
+          sendBtn.innerHTML = `<img src="/assets/send.svg" class="ic sm ic-white" /> Send`;
+        }
+      }
+
       async function handleSendPrompt() {
         const promptText = promptEl.value.trim();
-        if (!promptText && pendingAttachments.length === 0) return;
+        if ((!promptText && pendingAttachments.length === 0) || isProcessing) return;
+
+        isProcessing = true;
+        updateUI();
 
         const attachmentsToRender = [...pendingAttachments];
-        if (attachmentsToRender.length > 0) {
-          sendBtn.disabled = true;
-          sendBtn.textContent = "Uploading...";
-        }
-
-        const userMsgEl = addChatMessage(
-          "user",
-          promptText || "(Attachments only)",
-          "You"
-        );
+        const userMsgEl = addChatMessage("user", promptText || "(Attachments only)", "You");
         if (userMsgEl) renderMessageAttachments(userMsgEl, attachmentsToRender);
 
         promptEl.value = "";
         promptEl.style.height = "auto";
 
-        let uploadedFilePaths = [];
-        let bootedFromUpload = false;
+        let uploadedFileUrls = [];
 
         if (attachmentsToRender.length > 0) {
-          addChatMessage(
-            "system",
-            `Processing ${attachmentsToRender.length} attachment(s)...`,
-            "System"
-          );
-
+          addChatMessage("system", `Processing ${attachmentsToRender.length} attachment(s)...`, "System");
           for (const item of attachmentsToRender) {
             for (const file of item.files) {
               const formData = new FormData();
               formData.append("file", file);
-              if (item.isFolder) {
-                formData.append("relativePath", file.webkitRelativePath);
-              }
-
               try {
-                const response = await fetch(`/upload?sid=${sessionId}`, {
-                  method: "POST",
-                  body: formData,
-                });
-                if (!response.ok)
-                  throw new Error(`Server returned ${response.status}`);
-                const result = await response.json();
-                uploadedFilePaths.push(result.filePath || file.name);
-
-                if (
-                  (file.name.endsWith(".iso") || file.name.endsWith(".img")) &&
-                  !bootedFromUpload
-                ) {
-                  addChatMessage(
-                    "system",
-                    `Custom OS image detected. Booting VM With the Custom image...`,
-                    "System"
-                  );
-                  initV86Emulator(result.filePath);
-                  bootedFromUpload = true;
-                }
+                const response = await fetch(`/upload?sid=${sessionId}`, { method: "POST", body: formData });
+                if (!response.ok) throw new Error(`Server returned ${response.status}`);
+                uploadedFileUrls.push(`${location.origin}/upload?sid=${sessionId}&name=${encodeURIComponent(file.name)}`);
               } catch (err) {
-                addChatMessage(
-                  "system",
-                  `Error uploading ${file.name}: ${err.message}, try Reloading`,
-                  "System",
-                  true
-                );
+                addChatMessage("system", `Error uploading ${file.name}: ${err.message}`, "System", true);
               }
             }
           }
-
           pendingAttachments = [];
           renderAttachments();
-          sendBtn.disabled = false;
-          sendBtn.innerHTML = `<img src="/assets/send.svg" class="ic sm ic-white" /> Send`;
-          addChatMessage("system", "Attachments processed.", "System");
+          addChatMessage("system", "Attachments processed. Agent will pull them into VM.", "System");
         }
 
         if (ws && ws.readyState === WebSocket.OPEN) {
-          ws.send(
-            JSON.stringify({
-              type: "user_prompt",
-              payload: {
-                prompt: promptText,
-                attachments: uploadedFilePaths,
-                thinking: thinkingModeEnabled,
-              },
-            })
-          );
+          let fullPrompt = promptText;
+          if (uploadedFileUrls.length > 0) {
+            fullPrompt += `\n\n[SYSTEM INSTRUCTION: The user has uploaded files. They are available via HTTP at the following URLs. Use 'wget <url> -O /root/uploads/<filename>' to pull them into the VM before proceeding.]\nURLs:\n${uploadedFileUrls.join("\n")}`;
+          }
+          
+          ws.send(JSON.stringify({
+            type: "llm_query",
+            payload: { prompt: fullPrompt }
+          }));
         } else {
-          addChatMessage(
-            "system",
-            "Unable to forward message. Server connection down",
-            "System",
-            true
-          );
+          addChatMessage("system", "Unable to forward message. Server connection down", "System", true);
+          isProcessing = false;
+          updateUI();
         }
       }
 
@@ -1815,23 +1235,6 @@
       uploadFileBtn.addEventListener("click", () => fileInput.click());
       uploadFolderBtn.addEventListener("click", () => folderInput.click());
 
-      thinkingToggle.addEventListener(
-        "change",
-        (e) => (thinkingModeEnabled = e.target.checked)
-      );
-      quietToggle.addEventListener("change", (e) => {
-        quietModeEnabled = e.target.checked;
-        if (quietModeEnabled) {
-          document
-            .querySelectorAll(".chat-message.system:not(.error)")
-            .forEach((el) => (el.style.display = "none"));
-        } else {
-          document
-            .querySelectorAll(".chat-message.system")
-            .forEach((el) => (el.style.display = ""));
-        }
-      });
-
       clearChatBtn.addEventListener("click", () => {
         chatEl.innerHTML = "";
         addChatMessage("system", "Chat history cleared", "System");
@@ -1839,16 +1242,10 @@
 
       document.querySelectorAll(".tab-btn").forEach((btn) => {
         btn.addEventListener("click", () => {
-          document
-            .querySelectorAll(".tab-btn")
-            .forEach((b) => b.classList.remove("active"));
-          document
-            .querySelectorAll(".view-content")
-            .forEach((c) => c.classList.remove("active"));
+          document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+          document.querySelectorAll(".view-content").forEach(c => c.classList.remove("active"));
           btn.classList.add("active");
-          document
-            .getElementById(`${btn.dataset.view}-container`)
-            .classList.add("active");
+          document.getElementById(`${btn.dataset.view}-container`).classList.add("active");
         });
       });
 
