@@ -3,6 +3,7 @@ import promptSystem            from "../../public/system-docs/system-prompts/pro
 import promptAgentLongCodeScan from "../../public/system-docs/system-prompts/agent-long-code-scan.md";
 import promptAgentShortCodeScan from "../../public/system-docs/system-prompts/prompt-agent-short-code-scan.md";
 
+// Skills Ripped from Claude lol, to lazy rn to add my owen
 import skillApiAndInfrenceDesign      from "../../public/system-docs/skills/skill-api-and-infrence-design.md";
 import skillCodeReviewAndQuality     from "../../public/system-docs/skills/skill-code-review-and-quality.md";
 import skillCodeSimplification       from "../../public/system-docs/skills/skill-code-simplification.md";
